@@ -23,6 +23,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
 option(WITH_GTEST "Enable GoogleTest" OFF)
 message(STATUS "GoogleTest: WITH_GTEST=${WITH_GTEST}")
 
+option(HAVE_BQPD "Enable BQPD" ON)
+option(HAVE_MA27 "Enable MA27" ON)
+option(HAVE_MA57 "Enable MA57" OFF)
+option(HAVE_AMPL "Enable AMPL" OFF)
+
 # directories
 set(DIRECTORIES uno)
 
@@ -44,50 +49,78 @@ file(GLOB UNO_SOURCE_FILES
 
 # find libraries
 set(LIBRARIES "")
+set(DEFINES)
 set(OPTIONAL_LIBRARIES amplsolver ma57 metis bqpd CACHE STRING "Optional libraries")
 set(REQUIRED_LIBRARIES dl blas lapack)
 
-# automatic detection of optional libraries
-foreach(library_name IN LISTS OPTIONAL_LIBRARIES)
-	find_library(${library_name} ${library_name})
-	# ${library_name} is the name of the library(e.g. ma57)
-	# ${${library_name}} is the path of the library if found, otherwise ${library_name}-NOTFOUND
-	if(${${library_name}} STREQUAL "${library_name}-NOTFOUND")
-		message(WARNING "Optional library ${library_name} was not found. Use ccmake to configure its path.")
-	else()
-		# add the library
-		list(APPEND LIBRARIES ${${library_name}})
-		# add a preprocessor definition
-		string(TOUPPER ${library_name} library_name_upper)
-		add_definitions("-D HAS_${library_name_upper}")
-		# include the corresponding directory
-		get_filename_component(directory ${${library_name}} DIRECTORY)
-		include_directories(${directory})
-        message(STATUS "Library ${library_name} was found")
+# # automatic detection of optional libraries
+# foreach(library_name IN LISTS OPTIONAL_LIBRARIES)
+# 	find_library(${library_name} ${library_name})
+# 	# ${library_name} is the name of the library(e.g. ma57)
+# 	# ${${library_name}} is the path of the library if found, otherwise ${library_name}-NOTFOUND
+# 	if(${${library_name}} STREQUAL "${library_name}-NOTFOUND")
+# 		message(WARNING "Optional library ${library_name} was not found. Use ccmake to configure its path.")
+# 	else()
+# 		# add the library
+# 		list(APPEND LIBRARIES ${${library_name}})
+# 		# add a preprocessor definition
+# 		string(TOUPPER ${library_name} library_name_upper)
+# 		add_definitions("-D HAS_${library_name_upper}")
+# 		# include the corresponding directory
+# 		get_filename_component(directory ${${library_name}} DIRECTORY)
+# 		include_directories(${directory})
+#         message(STATUS "Library ${library_name} was found")
         
-        # add the corresponding sources
-        if(${library_name} STREQUAL amplsolver)
-            list(APPEND UNO_SOURCE_FILES uno/interfaces/AMPL/AMPLModel.cpp)
-        elseif(${library_name} STREQUAL bqpd)
-            list(APPEND UNO_SOURCE_FILES uno/solvers/QP/BQPDSolver.cpp uno/solvers/QP/wdotd.f)
-        elseif(${library_name} STREQUAL ma57)
-            list(APPEND UNO_SOURCE_FILES uno/solvers/linear/MA57Solver.cpp)
-        endif()
-	endif()
-endforeach(library_name)
+#         # add the corresponding sources
+#         if(${library_name} STREQUAL amplsolver)
+#             list(APPEND UNO_SOURCE_FILES uno/interfaces/AMPL/AMPLModel.cpp)
+#         elseif(${library_name} STREQUAL bqpd)
+#             list(APPEND UNO_SOURCE_FILES uno/solvers/QP/BQPDSolver.cpp uno/solvers/QP/wdotd.f)
+#         elseif(${library_name} STREQUAL ma57)
+#             list(APPEND UNO_SOURCE_FILES uno/solvers/linear/MA57Solver.cpp)
+#         endif()
+# 	endif()
+# endforeach(library_name)
 
-# automatic detection of required libraries
-foreach(library_name IN LISTS REQUIRED_LIBRARIES)
-	find_library(${library_name} ${library_name})
-	# ${library_name} is the name of the library(e.g. blas)
-	# ${${library_name}} is the path of the library if found, otherwise ${library_name}-NOTFOUND
-	if(${${library_name}} STREQUAL "${library_name}-NOTFOUND")
-		message(FATAL_ERROR "Required library ${library_name} was not found. Use ccmake to configure its path.")
-	else()
-		# add the library
-		list(APPEND LIBRARIES ${${library_name}})
-	endif()
-endforeach(library_name)
+# # automatic detection of required libraries
+# foreach(library_name IN LISTS REQUIRED_LIBRARIES)
+# 	find_library(${library_name} ${library_name})
+# 	# ${library_name} is the name of the library(e.g. blas)
+# 	# ${${library_name}} is the path of the library if found, otherwise ${library_name}-NOTFOUND
+# 	if(${${library_name}} STREQUAL "${library_name}-NOTFOUND")
+# 		message(FATAL_ERROR "Required library ${library_name} was not found. Use ccmake to configure its path.")
+# 	else()
+# 		# add the library
+# 		list(APPEND LIBRARIES ${${library_name}})
+# 	endif()
+# endforeach(library_name)
+
+add_subdirectory(resources)
+
+if (HAVE_BQPD)
+list(APPEND UNO_SOURCE_FILES uno/solvers/QP/BQPDSolver.cpp uno/solvers/QP/wdotd.f)
+list(APPEND LIBRARIES bqpd::bqpd)
+list(APPEND DEFINES HAS_BQPD)
+endif()
+
+if (HAVE_MA27)
+list(APPEND UNO_SOURCE_FILES uno/solvers/linear/MA27Solver.cpp)
+list(APPEND LIBRARIES hsl::ma27)
+list(APPEND DEFINES HAS_MA27)
+endif()
+
+if (HAVE_MA57)
+list(APPEND UNO_SOURCE_FILES uno/solvers/linear/MA57Solver.cpp)
+list(APPEND LIBRARIES hsl::ma57)
+list(APPEND DEFINES HAS_MA57)
+endif()
+
+if (HAVE_AMPL)
+list(APPEND UNO_SOURCE_FILES uno/interfaces/AMPL/AMPLModel.cpp)
+list(APPEND LIBRARIES amplsolver)
+list(APPEND DEFINES HAS_AMPL)
+endif()
+
 find_package(OpenMP REQUIRED)
 list(APPEND LIBRARIES OpenMP::OpenMP_CXX)
 
@@ -96,9 +129,11 @@ list(APPEND LIBRARIES OpenMP::OpenMP_CXX)
 #######
 add_library(uno STATIC ${UNO_SOURCE_FILES})
 target_include_directories(uno PUBLIC ${DIRECTORIES})
+target_compile_definitions(uno PUBLIC ${DEFINES})
 
 # link the libraries
 target_link_libraries(uno PUBLIC ${LIBRARIES})
+
 
 # copy the option file
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/uno.options DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

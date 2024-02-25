@@ -7,25 +7,8 @@
 #include "linear_algebra/Vector.hpp"
 #include "tools/Logger.hpp"
 #include "tools/Infinity.hpp"
-
+#include "bqpd.hpp"
 #define BIG 1e30
-
-extern "C" {
-// fortran common block used in bqpd/bqpd.f
-extern struct {
-   int kk, ll, kkk, lll, mxws, mxlws;
-} wsc_;
-
-// fortran common for inertia correction in wdotd
-extern struct {
-   double alpha;
-} kktalphac_;
-
-extern void
-bqpd_(const int* n, const int* m, int* k, int* kmax, double* a, int* la, double* x, double* bl, double* bu, double* f, double* fmin, double* g,
-      double* r, double* w, double* e, int* ls, double* alp, int* lp, int* mlp, int* peq, double* ws, int* lws, const int* mode, int* ifail,
-      int* info, int* iprint, int* nout);
-}
 
 // preallocate a bunch of stuff
 BQPDSolver::BQPDSolver(size_t max_number_variables, size_t number_constraints, size_t number_hessian_nonzeros, BQPDProblemType problem_type,
@@ -81,11 +64,11 @@ Direction BQPDSolver::solve_subproblem(size_t number_variables, size_t number_co
       const WarmstartInformation& warmstart_information) {
    // initialize wsc_ common block (Hessian & workspace for BQPD)
    // setting the common block here ensures that several instances of BQPD can run simultaneously
-   wsc_.kk = static_cast<int>(this->number_hessian_nonzeros);
-   wsc_.ll = static_cast<int>(this->size_hessian_sparsity);
-   wsc_.mxws = static_cast<int>(this->size_hessian_workspace);
-   wsc_.mxlws = static_cast<int>(this->size_hessian_sparsity_workspace);
-   kktalphac_.alpha = 0; // inertia control
+   FC_wsc.kk = static_cast<int>(this->number_hessian_nonzeros);
+   FC_wsc.ll = static_cast<int>(this->size_hessian_sparsity);
+   FC_wsc.mxws = static_cast<int>(this->size_hessian_workspace);
+   FC_wsc.mxlws = static_cast<int>(this->size_hessian_sparsity_workspace);
+   FC_kktalphac.alpha = 0; // inertia control
 
    if (this->print_subproblem) {
       DEBUG << "objective gradient: " << linear_objective;
@@ -129,7 +112,7 @@ Direction BQPDSolver::solve_subproblem(size_t number_variables, size_t number_co
    const int mode_integer = static_cast<int>(mode);
 
    // solve the LP/QP
-   bqpd_(&n, &m, &this->k, &this->kmax, this->jacobian.data(), this->jacobian_sparsity.data(), direction.primals.data(), this->lb.data(),
+   FC_bqpd(&n, &m, &this->k, &this->kmax, this->jacobian.data(), this->jacobian_sparsity.data(), direction.primals.data(), this->lb.data(),
          this->ub.data(), &direction.subproblem_objective, &this->fmin, this->gradient_solution.data(), this->residuals.data(), this->w.data(),
          this->e.data(), this->active_set.data(), this->alp.data(), this->lp.data(), &this->mlp, &this->peq_solution, this->hessian_values.data(),
          this->hessian_sparsity.data(), &mode_integer, &this->ifail, this->info.data(), &this->iprint, &this->nout);
