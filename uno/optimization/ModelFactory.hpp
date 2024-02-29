@@ -7,7 +7,9 @@
 #include <memory>
 #include "Model.hpp"
 #include "Iterate.hpp"
+#ifdef HAS_AMPL
 #include "interfaces/AMPL/AMPLModel.hpp"
+#endif
 #include "tools/Options.hpp"
 
 class ModelFactory {
