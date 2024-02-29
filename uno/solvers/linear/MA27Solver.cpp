@@ -3,146 +3,123 @@
 
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 #include "ma27.hpp"
 #include "MA27Solver.hpp"
 #include "linear_algebra/Vector.hpp"
 
-MA27Solver::MA27Solver(size_t max_dimension, size_t max_number_nonzeros) : SymmetricIndefiniteLinearSolver<double>(max_dimension),
-   iwork(5 * max_dimension),
-   lwork(static_cast<int>(1.2 * static_cast<double>(max_dimension))),
-   work(static_cast<size_t>(this->lwork)), residuals(max_dimension) {
-   this->row_indices.reserve(max_number_nonzeros);
-   this->column_indices.reserve(max_number_nonzeros);
+MA27Solver::MA27Solver(size_t max_dimension, size_t max_number_nonzeros)
+    : SymmetricIndefiniteLinearSolver<double>(max_dimension), n(max_dimension), nz(max_number_nonzeros), irn(max_number_nonzeros), icn(max_number_nonzeros), iw(3 * (max_dimension + max_number_nonzeros)), ikeep(3 * (max_dimension + max_number_nonzeros)), iw1(max_dimension)
+{
+   iflag = 0;
    // set the default values of the controlling parameters
-   FC_ma27id(this->cntl.data(), this->icntl.data());
+   FC_ma27id(icntl, cntl);
    // suppress warning messages
-   this->icntl[4] = 0;
-   // iterative refinement enabled
-   this->icntl[8] = 1;
+   icntl[1 - 1] = 0;
+   icntl[2 - 1] = 0;
+   icntl[3 - 1] = 0;
 }
 
-void MA27Solver::factorize(const SymmetricMatrix<double>& matrix) {
-   // general factorization method: symbolic factorization and numerical factorization
-   this->do_symbolic_factorization(matrix);
-   this->do_numerical_factorization(matrix);
+void MA27Solver::factorize(const SymmetricMatrix<double> &matrix)
+{
+   // // general factorization method: symbolic factorization and numerical factorization
+   do_symbolic_factorization(matrix);
+   do_numerical_factorization(matrix);
 }
 
-void MA27Solver::do_symbolic_factorization(const SymmetricMatrix<double>& matrix) {
-   assert(matrix.dimension <= this->max_dimension && "MA27Solver: the dimension of the matrix is larger than the preallocated size");
-   assert(matrix.number_nonzeros <= this->row_indices.capacity() &&
-      "MA27Solver: the number of nonzeros of the matrix is larger than the preallocated size");
+void MA27Solver::do_symbolic_factorization(const SymmetricMatrix<double> &matrix)
+{
+   assert(matrix.dimension <= max_dimension && "MA27Solver: the dimension of the matrix is larger than the preallocated size");
+   assert(matrix.number_nonzeros <= irn.capacity() &&
+          "MA27Solver: the number of nonzeros of the matrix is larger than the preallocated size");
 
    // build the internal matrix representation
-   this->save_matrix_to_local_format(matrix);
+   save_matrix_to_local_format(matrix);
 
-   const int n = static_cast<int>(matrix.dimension);
-   const int nnz = static_cast<int>(matrix.number_nonzeros);
-
-   // sparsity pattern
-   const int lkeep = 5 * n + nnz + std::max(n, nnz) + 42;
-   std::vector<int> keep(static_cast<size_t>(lkeep));
+   int nmat = static_cast<int>(matrix.dimension);
+   int nnz = static_cast<int>(matrix.number_nonzeros);
 
    // symbolic factorization
-   FC_ma27ad(/* const */ &n,
-         /* const */ &nnz,
-         /* const */ this->row_indices.data(),
-         /* const */ this->column_indices.data(),
-         /* const */ &lkeep,
-         /* const */ keep.data(),
-         /* out */ this->iwork.data(),
-         /* const */ this->icntl.data(),
-         /* out */ this->info.data(),
-         /* out */ this->rinfo.data());
+   int liw = static_cast<int>(iw.size());
+   FC_ma27ad(&nmat, &nnz, irn.data(), icn.data(), iw.data(), &liw, ikeep.data(), iw1.data(), &nsteps,
+             &iflag, icntl, cntl, info, &ops);
+
+   factor.resize(1.5 * info[4]);
+
+   std::copy(matrix.data_raw_pointer(), matrix.data_raw_pointer() + matrix.number_nonzeros, factor.begin());
 
    assert(0 <= info[0] && "MA27: the symbolic factorization failed");
-   if (0 < info[0]) {
+   if (0 < info[0])
+   {
       WARNING << "MA27 has issued a warning: info(1) = " << info[0] << '\n';
    }
-   int lfact = 2 * this->info[8];
-   std::vector<double> fact(static_cast<size_t>(lfact));
-   int lifact = 2 * this->info[9];
-   std::vector<int> ifact(static_cast<size_t>(lifact));
-
-   // store the symbolic factorization
-   this->factorization = {n, nnz, std::move(fact), lfact, std::move(ifact), lifact, lkeep, std::move(keep)};
 }
 
-void MA27Solver::do_numerical_factorization(const SymmetricMatrix<double>& matrix) {
+void MA27Solver::do_numerical_factorization(const SymmetricMatrix<double> &matrix)
+{
    assert(matrix.dimension <= this->max_dimension && "MA27Solver: the dimension of the matrix is larger than the preallocated size");
-   assert(this->factorization.nnz == static_cast<int>(matrix.number_nonzeros) && "MA27Solver: the numbers of nonzeros do not match");
+   assert(nz == static_cast<int>(matrix.number_nonzeros) && "MA27Solver: the numbers of nonzeros do not match");
 
-   const int n = static_cast<int>(matrix.dimension);
+   int nmat = static_cast<int>(matrix.dimension);
+   int nnz = static_cast<int>(matrix.number_nonzeros);
    // numerical factorization
-   FC_ma27bd(&n,
-         &this->factorization.nnz,
-         /* const */ matrix.data_raw_pointer(),
-         /* out */ this->factorization.fact.data(),
-         /* const */ &this->factorization.lfact,
-         /* out*/ this->factorization.ifact.data(),
-         /* const */ &this->factorization.lifact,
-         /* const */ &this->factorization.lkeep,
-         /* const */ this->factorization.keep.data(), this->iwork.data(), this->icntl.data(), this->cntl.data(),
-         /* out */ this->info.data(),
-         /* out */ this->rinfo.data());
+   int la = static_cast<int>(factor.size());
+   int liw = static_cast<int>(iw.size());
+   FC_ma27bd(&nmat, &nnz, irn.data(), icn.data(), factor.data(), &la, iw.data(), &liw,
+             ikeep.data(), &nsteps, &maxfrt, iw1.data(), icntl, cntl, info);
 }
 
-void MA27Solver::solve_indefinite_system(const SymmetricMatrix<double>& matrix, const std::vector<double>& rhs, std::vector<double>& result) {
+void MA27Solver::solve_indefinite_system(const SymmetricMatrix<double> &matrix, const std::vector<double> &rhs, std::vector<double> &result)
+{
    // solve
-   const int n = static_cast<int>(matrix.dimension);
-   const int lrhs = n; // integer, length of rhs
+   int nmat = static_cast<int>(matrix.dimension);
+   std::vector<double> w(maxfrt); // double workspace
+   int la = static_cast<int>(factor.size());
+   int liw = static_cast<int>(iw.size());
 
-   // solve the linear system
-   if (this->use_iterative_refinement) {
-      FC_ma27dd(&this->job, &n, &this->factorization.nnz, matrix.data_raw_pointer(), this->row_indices.data(), this->column_indices.data(),
-            this->factorization.fact.data(), &this->factorization.lfact, this->factorization.ifact.data(), &this->factorization.lifact,
-            rhs.data(), result.data(), this->residuals.data(), this->work.data(), this->iwork.data(), this->icntl.data(),
-            this->cntl.data(), this->info.data(), this->rinfo.data());
-   }
-   else {
-      // copy rhs into result (overwritten by MA27)
-      copy_from(result, rhs);
-
-      FC_ma27cd(&this->job, &n, this->factorization.fact.data(), &this->factorization.lfact, this->factorization.ifact.data(),
-            &this->factorization.lifact, &this->nrhs, result.data(), &lrhs, this->work.data(), &this->lwork, this->iwork.data(),
-            this->icntl.data(), this->info.data());
-   }
+   FC_ma27cd(&nmat, factor.data(), &la, iw.data(), &liw, w.data(), &maxfrt, result.data(), iw1.data(),
+             &nsteps, icntl, info);
 }
 
-std::tuple<size_t, size_t, size_t> MA27Solver::get_inertia() const {
+std::tuple<size_t, size_t, size_t> MA27Solver::get_inertia() const
+{
    // rank = number_positive_eigenvalues + number_negative_eigenvalues
    // n = rank + number_zero_eigenvalues
-   const size_t rank = this->rank();
-   const size_t number_negative_eigenvalues = this->number_negative_eigenvalues();
-   const size_t number_positive_eigenvalues = rank - number_negative_eigenvalues;
-   const size_t number_zero_eigenvalues = static_cast<size_t>(this->factorization.n) - rank;
-   return std::make_tuple(number_positive_eigenvalues, number_negative_eigenvalues, number_zero_eigenvalues);
+   const size_t rankA = rank();
+   const size_t num_negative_eigenvalues = number_negative_eigenvalues();
+   const size_t num_positive_eigenvalues = rankA - num_negative_eigenvalues;
+   const size_t num_zero_eigenvalues = static_cast<size_t>(n) - rankA;
+   return std::make_tuple(num_positive_eigenvalues, num_negative_eigenvalues, num_zero_eigenvalues);
 }
 
-size_t MA27Solver::number_negative_eigenvalues() const {
-   return static_cast<size_t>(this->info[23]);
+size_t MA27Solver::number_negative_eigenvalues() const
+{
+   return static_cast<size_t>(info[15 - fortran_shift]);
 }
 
-/*
-bool MA27Solver::matrix_is_positive_definite() const {
-   // positive definite = non-singular and no negative eigenvalues
-   return not this->matrix_is_singular() && this->number_negative_eigenvalues() == 0;
-}
-*/
+// bool MA27Solver::matrix_is_positive_definite() const {
+//    // positive definite = non-singular and no negative eigenvalues
+//    return (!matrix_is_singular() && (number_negative_eigenvalues() == 0));
+// }
 
-bool MA27Solver::matrix_is_singular() const {
-   return (this->info[0] == 4);
-}
-
-size_t MA27Solver::rank() const {
-   return static_cast<size_t>(this->info[24]);
+bool MA27Solver::matrix_is_singular() const
+{
+   return (info[1 - fortran_shift] == -5);
 }
 
-void MA27Solver::save_matrix_to_local_format(const SymmetricMatrix<double>& matrix) {
+size_t MA27Solver::rank() const
+{
+   return info[1 - fortran_shift] == 3 ? static_cast<size_t>(info[2 - fortran_shift]) : static_cast<size_t>(n);
+}
+
+void MA27Solver::save_matrix_to_local_format(const SymmetricMatrix<double> &matrix)
+{
    // build the internal matrix representation
-   this->row_indices.clear();
-   this->column_indices.clear();
-   matrix.for_each([&](size_t row_index, size_t column_index, double /*entry*/) {
-      this->row_indices.push_back(static_cast<int>(row_index + this->fortran_shift));
-      this->column_indices.push_back(static_cast<int>(column_index + this->fortran_shift));
-   });
+   irn.clear();
+   icn.clear();
+
+   matrix.for_each([&](size_t row_index, size_t column_index, double /*entry*/)
+                   {
+      irn.push_back(static_cast<int>(row_index + fortran_shift));
+      icn.push_back(static_cast<int>(column_index + fortran_shift)); });
 }

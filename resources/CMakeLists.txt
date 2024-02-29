@@ -30,6 +30,8 @@ if (HAVE_MA27)
                         TYPE HEADERS
                         BASE_DIRS include
                         FILES include/ma27.hpp include/fc_help.h)
+    set_property(TARGET ma27 PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     list(APPEND FORTRANSYMBOLS ma27id ma27ad ma27bd ma27cd)
     install(TARGETS ma27 FILE_SET public_headers)
 endif()

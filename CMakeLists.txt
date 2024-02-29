@@ -15,9 +15,24 @@ project(Uno VERSION 1.0
 set(CMAKE_CXX_STANDARD 17)
 enable_language(CXX C Fortran)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
-set(CMAKE_CXX_FLAGS_DEBUG "-pg")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
+    set(CMAKE_CXX_FLAGS_DEBUG "-pg")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
+    set(CMAKE_CXX_FLAGS_DEBUG "-pg")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
+    set(CMAKE_CXX_FLAGS_DEBUG "-pg")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
+    set(CMAKE_CXX_FLAGS_DEBUG "-pg")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
+endif()
+
 
 # optional Gtest
 option(WITH_GTEST "Enable GoogleTest" OFF)
@@ -32,23 +47,16 @@ option(HAVE_AMPL "Enable AMPL" OFF)
 set(DIRECTORIES uno)
 
 # source files
-file(GLOB UNO_SOURCE_FILES
+file(GLOB_RECURSE UNO_SOURCE_FILES
     uno/Uno.cpp
-    uno/ingredients/globalization_mechanism/*.cpp
-    uno/ingredients/globalization_strategy/*.cpp
-    uno/ingredients/globalization_strategy/filter_method/*.cpp
-    uno/ingredients/globalization_strategy/filter_method/filter/*.cpp
-    uno/ingredients/constraint_relaxation_strategy/*.cpp
-    uno/ingredients/subproblem/*.cpp
-    uno/ingredients/subproblem/inequality_constrained_methods/*.cpp
-    uno/ingredients/subproblem/interior_point_methods/*.cpp
+    uno/ingredients/*.cpp
     uno/optimization/*.cpp
     uno/preprocessing/*.cpp
     uno/tools/*.cpp
 )
 
 # find libraries
-set(LIBRARIES "")
+set(LIBRARIES)
 set(DEFINES)
 set(OPTIONAL_LIBRARIES amplsolver ma57 metis bqpd CACHE STRING "Optional libraries")
 set(REQUIRED_LIBRARIES dl blas lapack)
@@ -130,6 +138,9 @@ list(APPEND LIBRARIES OpenMP::OpenMP_CXX)
 add_library(uno STATIC ${UNO_SOURCE_FILES})
 target_include_directories(uno PUBLIC ${DIRECTORIES})
 target_compile_definitions(uno PUBLIC ${DEFINES})
+
+set_property(TARGET ma27 PROPERTY
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # link the libraries
 target_link_libraries(uno PUBLIC ${LIBRARIES})
