@@ -4,6 +4,7 @@
 #ifndef UNO_BQPDSOLVER_H
 #define UNO_BQPDSOLVER_H
 
+#include <array>
 #include <vector>
 #include "QPSolver.hpp"
 #include "solvers/LP/LPSolver.hpp"
@@ -61,7 +62,7 @@ private:
    std::vector<int> jacobian_sparsity;
    int kmax, mlp{1000};
    size_t mxwk0{2000000}, mxiwk0{500000};
-   std::array<int, 100> info{{}};
+   std::array<int, 100> info{};
    std::vector<double> alp;
    std::vector<int> lp, active_set;
    std::vector<double> w, gradient_solution, residuals, e;

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cassert>
 #include <utility>
+#include <algorithm>
 #include "Model.hpp"
 #include "linear_algebra/VectorExpression.hpp"
 #include "linear_algebra/Vector.hpp"
