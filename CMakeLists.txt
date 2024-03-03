@@ -12,7 +12,7 @@ project(Uno VERSION 1.0
             LANGUAGES CXX C Fortran)
 
 # set C++17 and enable other languages
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 enable_language(CXX C Fortran)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -136,11 +136,12 @@ list(APPEND LIBRARIES OpenMP::OpenMP_CXX)
 # Uno #
 #######
 add_library(uno STATIC ${UNO_SOURCE_FILES})
+add_library(Uno::uno ALIAS uno)
 target_include_directories(uno PUBLIC ${DIRECTORIES})
 target_compile_definitions(uno PUBLIC ${DEFINES})
 
-set_property(TARGET ma27 PROPERTY
-    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set_property(TARGET uno PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # link the libraries
 target_link_libraries(uno PUBLIC ${LIBRARIES})
@@ -168,3 +169,5 @@ if(WITH_GTEST)
         target_link_libraries(run_unotest PUBLIC GTest::gtest uno)
     endif()
 endif()
+
+add_subdirectory(nlp_test)
