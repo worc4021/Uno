@@ -9,7 +9,7 @@
 #include "linear_algebra/Vector.hpp"
 
 MA27Solver::MA27Solver(size_t max_dimension, size_t max_number_nonzeros)
-    : SymmetricIndefiniteLinearSolver<double>(max_dimension), n(max_dimension), nz(max_number_nonzeros), irn(max_number_nonzeros), icn(max_number_nonzeros), iw(3 * (max_dimension + max_number_nonzeros)), ikeep(3 * (max_dimension + max_number_nonzeros)), iw1(max_dimension)
+    : SymmetricIndefiniteLinearSolver<double>(max_dimension), nz_max(max_number_nonzeros), n(max_dimension), nnz(max_number_nonzeros), irn(max_number_nonzeros), icn(max_number_nonzeros), iw(3 * (max_dimension + max_number_nonzeros)), ikeep(3 * (max_dimension + max_number_nonzeros)), iw1(max_dimension)
 {
    iflag = 0;
    // set the default values of the controlling parameters
@@ -36,12 +36,12 @@ void MA27Solver::do_symbolic_factorization(const SymmetricMatrix<double> &matrix
    // build the internal matrix representation
    save_matrix_to_local_format(matrix);
 
-   int nmat = static_cast<int>(matrix.dimension);
-   int nnz = static_cast<int>(matrix.number_nonzeros);
+   n = static_cast<int>(matrix.dimension);
+   nnz = static_cast<int>(matrix.number_nonzeros);
 
    // symbolic factorization
    int liw = static_cast<int>(iw.size());
-   FC_ma27ad(&nmat, &nnz, irn.data(), icn.data(), iw.data(), &liw, ikeep.data(), iw1.data(), &nsteps,
+   FC_ma27ad(&n, &nnz, irn.data(), icn.data(), iw.data(), &liw, ikeep.data(), iw1.data(), &nsteps,
              &iflag, icntl, cntl, info, &ops);
 
    factor.resize(1.5 * info[4]);
@@ -58,26 +58,23 @@ void MA27Solver::do_symbolic_factorization(const SymmetricMatrix<double> &matrix
 void MA27Solver::do_numerical_factorization(const SymmetricMatrix<double> &matrix)
 {
    assert(matrix.dimension <= this->max_dimension && "MA27Solver: the dimension of the matrix is larger than the preallocated size");
-   assert(nz == static_cast<int>(matrix.number_nonzeros) && "MA27Solver: the numbers of nonzeros do not match");
+   assert(nnz == static_cast<int>(matrix.number_nonzeros) && "MA27Solver: the numbers of nonzeros do not match");
 
-   int nmat = static_cast<int>(matrix.dimension);
-   int nnz = static_cast<int>(matrix.number_nonzeros);
    // numerical factorization
    int la = static_cast<int>(factor.size());
    int liw = static_cast<int>(iw.size());
-   FC_ma27bd(&nmat, &nnz, irn.data(), icn.data(), factor.data(), &la, iw.data(), &liw,
+   FC_ma27bd(&n, &nnz, irn.data(), icn.data(), factor.data(), &la, iw.data(), &liw,
              ikeep.data(), &nsteps, &maxfrt, iw1.data(), icntl, cntl, info);
 }
 
 void MA27Solver::solve_indefinite_system(const SymmetricMatrix<double> &matrix, const std::vector<double> &rhs, std::vector<double> &result)
 {
    // solve
-   int nmat = static_cast<int>(matrix.dimension);
    std::vector<double> w(maxfrt); // double workspace
    int la = static_cast<int>(factor.size());
    int liw = static_cast<int>(iw.size());
 
-   FC_ma27cd(&nmat, factor.data(), &la, iw.data(), &liw, w.data(), &maxfrt, result.data(), iw1.data(),
+   FC_ma27cd(&n, factor.data(), &la, iw.data(), &liw, w.data(), &maxfrt, result.data(), iw1.data(),
              &nsteps, icntl, info);
 }
 

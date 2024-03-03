@@ -33,8 +33,9 @@ public:
    [[nodiscard]] size_t rank() const override;
 
 private:
-   int n;          // order of matrix, namely number of rows or cols
-   int nz;         // number of nonzeros entries
+   int nz_max;         // maximal number of nonzeros entries
+   int n;			   // dimension of current factorisation (maximal value here is <= max_dimension)
+   int nnz;			   // number of nonzeros of current factorisation
    int icntl[30];  // integer array of length 30; integer control values
    double cntl[5]; // double array of length 5; double control values
 
