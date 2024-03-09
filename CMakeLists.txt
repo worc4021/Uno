@@ -17,8 +17,8 @@ enable_language(CXX C Fortran)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
-    set(CMAKE_CXX_FLAGS_DEBUG "-pg")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
+    # set(CMAKE_CXX_FLAGS_DEBUG "-pg")
+    # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
     set(CMAKE_CXX_FLAGS_DEBUG "-pg")
@@ -153,8 +153,10 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/uno.options DESTINATION ${CMAKE_CURRENT_BI
 #############
 # AMPL main #
 #############
+if(HAVE_AMPL)
 add_executable(uno_ampl uno/main.cpp)
 target_link_libraries(uno_ampl PUBLIC uno)
+endif()
 
 #########################
 # GoogleTest unit tests #
