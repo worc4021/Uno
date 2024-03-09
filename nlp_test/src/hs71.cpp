@@ -92,8 +92,8 @@ int main(int argc, char* argv[]) {
       Options options = get_default_options("uno.options");
       // override them with the command line options
       
-      find_preset("ipopt", options);
-      options["linear_solver"] = "MA27";
+      find_preset("filtersqp", options);
+      // options["linear_solver"] = "MA27";
 
       Logger::set_logger(options.get_string("logger"));
 

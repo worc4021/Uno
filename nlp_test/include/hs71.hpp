@@ -149,10 +149,12 @@ void evaluate_lagrangian_hessian(const std::vector<double>& x, double objective_
                               {0,2,0,0},
                               {0,0,2,0},
                               {0,0,0,2}};
-    for (size_t iRow = 0; iRow < 4; iRow++) {
-        for (size_t jCol = 0; jCol <= iRow; jCol++) {
+    hessian.reset();
+    for (size_t jCol = 0; jCol < 4; jCol++) {
+        for (size_t iRow = jCol; iRow < 4; iRow++) {
             hessian.insert(objective_multiplier*H[iRow][jCol] + multipliers[0]*cH[iRow][jCol] + multipliers[1]*cH2[iRow][jCol], iRow, jCol);
         }
+        hessian.finalize_column(jCol);
     }
     }
     void get_initial_primal_point(std::vector<double>& x) const override {
