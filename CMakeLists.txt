@@ -15,23 +15,21 @@ project(Uno VERSION 1.0
 set(CMAKE_CXX_STANDARD 20)
 enable_language(CXX C Fortran)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
-    # set(CMAKE_CXX_FLAGS_DEBUG "-pg")
-    # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_CXX_FLAGS -Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
     set(CMAKE_CXX_FLAGS_DEBUG "-pg")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+    if(WIN32)
+        set(CMAKE_CXX_FLAGS "/Wall /Wextra /Wnon-virtual-dtor /Wunused-value /Wunused-function /Wconversion /Wmaybe-uninitialized /fp:precise")
+    else()
+        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -Wunused-value -Wunused-function -Wconversion -Wmaybe-uninitialized -fp-model=precise")
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
-    set(CMAKE_CXX_FLAGS_DEBUG "-pg")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
-    set(CMAKE_CXX_FLAGS_DEBUG "-pg")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
 endif()
+add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
 
 # optional Gtest
