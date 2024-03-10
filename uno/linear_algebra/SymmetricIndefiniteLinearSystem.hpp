@@ -138,7 +138,7 @@ void SymmetricIndefiniteLinearSystem<ElementType>::regularize_matrix(Statistics&
    }
 
    // regularize the augmented matrix
-   this->matrix->set_regularization([=](size_t row_index) {
+   this->matrix->set_regularization([&, this](size_t row_index) {
       return (row_index < size_primal_block) ? this->primal_regularization : -this->dual_regularization;
    });
 
@@ -168,7 +168,7 @@ void SymmetricIndefiniteLinearSystem<ElementType>::regularize_matrix(Statistics&
 
          if (this->primal_regularization <= this->regularization_failure_threshold) {
             // regularize the augmented matrix
-            this->matrix->set_regularization([=](size_t row_index) {
+            this->matrix->set_regularization([&, this](size_t row_index) {
                return (row_index < size_primal_block) ? this->primal_regularization : -this->dual_regularization;
             });
          }

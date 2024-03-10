@@ -198,7 +198,7 @@ inline std::function<double(double)> l1RelaxedProblem::compute_predicted_optimal
       const double current_constraint_violation = this->model.compute_constraint_violation(current_iterate.evaluations.constraints, Norm::L1);
       const double trial_linearized_constraint_violation = this->model.compute_linearized_constraint_violation(direction.primals,
             current_iterate.evaluations.constraints, current_iterate.evaluations.constraint_jacobian, step_length, Norm::L1);
-      return [=](double /*objective_multiplier*/) {
+      return [&, this](double /*objective_multiplier*/) {
          return this->constraint_violation_coefficient * (current_constraint_violation - trial_linearized_constraint_violation) -
             step_length*step_length/2. * quadratic_problem;
       };
@@ -206,7 +206,7 @@ inline std::function<double(double)> l1RelaxedProblem::compute_predicted_optimal
    else { // 0. < objective_multiplier
       // "-ρ*∇f(x)^T (αd)"
       const double directional_derivative = dot(direction.primals, current_iterate.evaluations.objective_gradient);
-      return [=](double objective_multiplier) {
+      return [&](double objective_multiplier) {
          return step_length * (-objective_multiplier*directional_derivative) - step_length*step_length/2. * quadratic_problem;
       };
    }
