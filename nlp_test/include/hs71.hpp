@@ -71,7 +71,7 @@ public:
             return BoundType::UNBOUNDED;
         }
     }
-    FunctionType get_constraint_type(size_t constraint_index) const override {
+    FunctionType get_constraint_type([[maybe_unused]]size_t constraint_index) const override {
         return FunctionType::NONLINEAR;
     }
 
@@ -163,7 +163,7 @@ void evaluate_lagrangian_hessian(const std::vector<double>& x, double objective_
     void get_initial_dual_point(std::vector<double>& multipliers) const override {
         std::fill(multipliers.begin(), multipliers.end(), 0.0);
     }
-    void postprocess_solution(Iterate& iterate, TerminationStatus termination_status) const override {
+    void postprocess_solution([[maybe_unused]]Iterate& iterate, [[maybe_unused]]TerminationStatus termination_status) const override {
         // do nothing
     }
     const std::vector<size_t>& get_linear_constraints() const override {
