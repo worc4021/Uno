@@ -9,11 +9,20 @@
 #include "linear_algebra/Vector.hpp"
 
 MA27Solver::MA27Solver(size_t max_dimension, size_t max_number_nonzeros)
-    : SymmetricIndefiniteLinearSolver<double>(max_dimension), nz_max(max_number_nonzeros), n(max_dimension), nnz(max_number_nonzeros), irn(max_number_nonzeros), icn(max_number_nonzeros), iw(3 * (max_dimension + max_number_nonzeros)), ikeep(3 * (max_dimension + max_number_nonzeros)), iw1(max_dimension)
+    : SymmetricIndefiniteLinearSolver<double>(max_dimension)
+    , nz_max(static_cast<int>(max_number_nonzeros))
+    , n(static_cast<int>(max_dimension))
+    , nnz(static_cast<int>(max_number_nonzeros))
 {
+   irn.resize(max_number_nonzeros);
+   icn.resize(max_number_nonzeros);
+   iw.resize(3 * (max_dimension + max_number_nonzeros));
+   ikeep.resize(3 * (max_dimension + max_number_nonzeros));
+   iw1.resize(max_dimension);
+
    iflag = 0;
    // set the default values of the controlling parameters
-   FC_ma27id(icntl, cntl);
+   FC_ma27id(icntl.data(), cntl.data());
    // suppress warning messages
    icntl[1 - 1] = 0;
    icntl[2 - 1] = 0;
@@ -42,9 +51,9 @@ void MA27Solver::do_symbolic_factorization(const SymmetricMatrix<double> &matrix
    // symbolic factorization
    int liw = static_cast<int>(iw.size());
    FC_ma27ad(&n, &nnz, irn.data(), icn.data(), iw.data(), &liw, ikeep.data(), iw1.data(), &nsteps,
-             &iflag, icntl, cntl, info, &ops);
+             &iflag, icntl.data(), cntl.data(), info.data(), &ops);
 
-   factor.resize(1.5 * info[4]);
+   factor.resize(3 * static_cast<std::size_t>(info[4]) / 2);
 
    std::copy(matrix.data_raw_pointer(), matrix.data_raw_pointer() + matrix.number_nonzeros, factor.begin());
 
@@ -55,7 +64,7 @@ void MA27Solver::do_symbolic_factorization(const SymmetricMatrix<double> &matrix
    }
 }
 
-void MA27Solver::do_numerical_factorization(const SymmetricMatrix<double> &matrix)
+void MA27Solver::do_numerical_factorization([[maybe_unused]]const SymmetricMatrix<double> &matrix)
 {
    assert(matrix.dimension <= this->max_dimension && "MA27Solver: the dimension of the matrix is larger than the preallocated size");
    assert(nnz == static_cast<int>(matrix.number_nonzeros) && "MA27Solver: the numbers of nonzeros do not match");
@@ -64,18 +73,20 @@ void MA27Solver::do_numerical_factorization(const SymmetricMatrix<double> &matri
    int la = static_cast<int>(factor.size());
    int liw = static_cast<int>(iw.size());
    FC_ma27bd(&n, &nnz, irn.data(), icn.data(), factor.data(), &la, iw.data(), &liw,
-             ikeep.data(), &nsteps, &maxfrt, iw1.data(), icntl, cntl, info);
+             ikeep.data(), &nsteps, &maxfrt, iw1.data(), icntl.data(), cntl.data(), info.data());
 }
 
-void MA27Solver::solve_indefinite_system(const SymmetricMatrix<double> &matrix, const std::vector<double> &rhs, std::vector<double> &result)
+void MA27Solver::solve_indefinite_system([[maybe_unused]]const SymmetricMatrix<double> &matrix, const std::vector<double> &rhs, std::vector<double> &result)
 {
    // solve
    std::vector<double> w(maxfrt); // double workspace
    int la = static_cast<int>(factor.size());
    int liw = static_cast<int>(iw.size());
 
+   std::copy(rhs.cbegin(), rhs.cend(), result.begin());
+
    FC_ma27cd(&n, factor.data(), &la, iw.data(), &liw, w.data(), &maxfrt, result.data(), iw1.data(),
-             &nsteps, icntl, info);
+             &nsteps, icntl.data(), info.data());
 }
 
 std::tuple<size_t, size_t, size_t> MA27Solver::get_inertia() const
