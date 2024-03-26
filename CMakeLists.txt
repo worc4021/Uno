@@ -16,7 +16,8 @@ set(CMAKE_CXX_STANDARD 20)
 enable_language(CXX C Fortran)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized") # -fsanitize=address
+    set(CMAKE_CXX_FLAGS_DEBUG "-ggdb3")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion -Wmaybe-uninitialized")
     set(CMAKE_CXX_FLAGS_DEBUG "-pg")
@@ -40,7 +41,7 @@ option(HAVE_BQPD "Enable BQPD" ON)
 option(HAVE_MA27 "Enable MA27" ON)
 option(HAVE_MA57 "Enable MA57" OFF)
 option(HAVE_AMPL "Enable AMPL" OFF)
-option(USE_OPENMP "Enable OpenMP" ON)
+option(USE_OPENMP "Enable OpenMP" OFF)
 
 # directories
 set(DIRECTORIES uno)
@@ -59,48 +60,6 @@ set(LIBRARIES)
 set(DEFINES)
 set(OPTIONAL_LIBRARIES amplsolver ma57 metis bqpd CACHE STRING "Optional libraries")
 set(REQUIRED_LIBRARIES dl blas lapack)
-
-# # automatic detection of optional libraries
-# foreach(library_name IN LISTS OPTIONAL_LIBRARIES)
-# 	find_library(${library_name} ${library_name})
-# 	# ${library_name} is the name of the library(e.g. ma57)
-# 	# ${${library_name}} is the path of the library if found, otherwise ${library_name}-NOTFOUND
-# 	if(${${library_name}} STREQUAL "${library_name}-NOTFOUND")
-# 		message(WARNING "Optional library ${library_name} was not found. Use ccmake to configure its path.")
-# 	else()
-# 		# add the library
-# 		list(APPEND LIBRARIES ${${library_name}})
-# 		# add a preprocessor definition
-# 		string(TOUPPER ${library_name} library_name_upper)
-# 		add_definitions("-D HAS_${library_name_upper}")
-# 		# include the corresponding directory
-# 		get_filename_component(directory ${${library_name}} DIRECTORY)
-# 		include_directories(${directory})
-#         message(STATUS "Library ${library_name} was found")
-        
-#         # add the corresponding sources
-#         if(${library_name} STREQUAL amplsolver)
-#             list(APPEND UNO_SOURCE_FILES uno/interfaces/AMPL/AMPLModel.cpp)
-#         elseif(${library_name} STREQUAL bqpd)
-#             list(APPEND UNO_SOURCE_FILES uno/solvers/QP/BQPDSolver.cpp uno/solvers/QP/wdotd.f)
-#         elseif(${library_name} STREQUAL ma57)
-#             list(APPEND UNO_SOURCE_FILES uno/solvers/linear/MA57Solver.cpp)
-#         endif()
-# 	endif()
-# endforeach(library_name)
-
-# # automatic detection of required libraries
-# foreach(library_name IN LISTS REQUIRED_LIBRARIES)
-# 	find_library(${library_name} ${library_name})
-# 	# ${library_name} is the name of the library(e.g. blas)
-# 	# ${${library_name}} is the path of the library if found, otherwise ${library_name}-NOTFOUND
-# 	if(${${library_name}} STREQUAL "${library_name}-NOTFOUND")
-# 		message(FATAL_ERROR "Required library ${library_name} was not found. Use ccmake to configure its path.")
-# 	else()
-# 		# add the library
-# 		list(APPEND LIBRARIES ${${library_name}})
-# 	endif()
-# endforeach(library_name)
 
 add_subdirectory(resources)
 
