@@ -40,6 +40,7 @@ option(HAVE_BQPD "Enable BQPD" ON)
 option(HAVE_MA27 "Enable MA27" ON)
 option(HAVE_MA57 "Enable MA57" OFF)
 option(HAVE_AMPL "Enable AMPL" OFF)
+option(USE_OPENMP "Enable OpenMP" ON)
 
 # directories
 set(DIRECTORIES uno)
@@ -127,8 +128,10 @@ list(APPEND LIBRARIES amplsolver)
 list(APPEND DEFINES HAS_AMPL)
 endif()
 
+if (USE_OPENMP)
 find_package(OpenMP REQUIRED)
 list(APPEND LIBRARIES OpenMP::OpenMP_CXX)
+endif()
 
 #######
 # Uno #
