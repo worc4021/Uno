@@ -35,21 +35,21 @@ private:
    size_t print_header_every_iterations{};
    // std::string symbol(const std::string& value) const;
    struct Symbol {
-      const std::string top{""};//{"─"};
-      const std::string bottom{""};//{"─"};
-      const std::string mid{""};//{"-"};
-      const std::string top_left{""};//{"┌"};
-      const std::string top_mid{""};//{"┬"};
-      const std::string top_right{""};//{"┐"};
-      const std::string left_mid{""};//{"├"};
-      const std::string mid_mid{""};//{"┼"};
-      const std::string right_mid{""};//{"┤"};
-      const std::string left{""};//{"│"};
-      const std::string middle{""};//{"│"};
-      const std::string right{""};//{"│"};
-      const std::string bottom_left{""};//{"└"};
-      const std::string bottom_mid{""};//{"┴"};
-      const std::string bottom_right{""};//{"┘"};
+      const std::string top{"─"};
+      const std::string bottom{"─"};
+      const std::string mid{"-"};
+      const std::string top_left{"┌"};
+      const std::string top_mid{"┬"};
+      const std::string top_right{"┐"};
+      const std::string left_mid{"├"};
+      const std::string mid_mid{"┼"};
+      const std::string right_mid{"┤"};
+      const std::string left{"│"};
+      const std::string middle{"│"};
+      const std::string right{"│"};
+      const std::string bottom_left{"└"};
+      const std::string bottom_mid{"┴"};
+      const std::string bottom_right{"┘"};
    } symbol;
 };
 
