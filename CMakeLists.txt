@@ -124,10 +124,11 @@ if(NOT MUMPS_LIBRARY)
    message(WARNING "Optional library MUMPS was not found.")
 else()
    list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MUMPSSolverTests.cpp)
-   list(APPEND LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_PORD_LIBRARY})
+   list(APPEND TESTS_UNO_SOURCE_FILES unotest/MUMPSSolverTests.cpp)
+   list(APPEND LIBRARIES libdmumps)
    
-   list(APPEND DIRECTORIES ${MUMPS_INCLUDE_DIR})
+   # list(APPEND DIRECTORIES ${MUMPS_INCLUDE_DIR})
+   
 
 
 ###############
