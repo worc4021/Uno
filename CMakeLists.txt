@@ -82,9 +82,9 @@ if(HSL OR MA57)
    list(APPEND UNO_SOURCE_FILES uno/solvers/MA57/MA57Solver.cpp)
    list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MA57SolverTests.cpp)
    
-   find_package(BLAS REQUIRED)
-   list(APPEND LIBRARIES ${BLAS_LIBRARIES})
-endif()
+#    find_package(BLAS REQUIRED)
+#    list(APPEND LIBRARIES ${BLAS_LIBRARIES})
+# endif()
 
 list(APPEND LIBRARIES metis::metis)
 list(APPEND UNO_DEFINES HAS_METIS)
