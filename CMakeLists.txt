@@ -82,14 +82,22 @@ set(LIBRARIES)
 set(UNO_DEFINES)
 
 
-# detect optional libraries: ma57 metis bqpd
-find_library(MA57 ma57 NAMES ma57 hsl)
-if(NOT MA57)
-   message(WARNING "Optional library MA57 was not found.")
+# HSL or MA57
+find_library(HSL hsl)
+if(HSL)
+   link_to_uno(hsl ${HSL})
 else()
+   message(WARNING "Optional library HSL was not found.")
+   find_library(MA57 ma57)
+   if(MA57)
+      link_to_uno(ma57 ${MA57})
+   else()
+      message(WARNING "Optional library MA57 was not found.")
+   endif()
+endif()
+if(HSL OR MA57)
    list(APPEND UNO_SOURCE_FILES uno/solvers/MA57/MA57Solver.cpp)
    list(APPEND TESTS_UNO_SOURCE_FILES unotest/MA57SolverTests.cpp)
-   link_to_uno(ma57 ${MA57})
    
 
 list(APPEND LIBRARIES metis::metis)
