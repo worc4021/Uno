@@ -71,7 +71,6 @@ find_library(HSL hsl)
 if(HSL OR MA57)
    list(APPEND UNO_SOURCE_FILES uno/solvers/MA57/MA57Solver.cpp)
    list(APPEND TESTS_UNO_SOURCE_FILES unotest/MA57SolverTests.cpp)
-   link_to_uno(ma57 ${MA57})
    
    find_package(BLAS REQUIRED)
    list(APPEND LIBRARIES ${BLAS_LIBRARIES})
