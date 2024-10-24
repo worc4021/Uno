@@ -125,10 +125,10 @@ function(link_to_uno library_name library_path)
    message(STATUS "Library ${library_name} was found.")
 endfunction()
 
-# HSL or MA57
-find_library(HSL hsl)
-if(HSL)
-   link_to_uno(hsl ${HSL})
+# detect optional libraries: ma57 metis bqpd
+find_library(MA57 ma57 NAMES ma57 hsl)
+if(NOT MA57)
+   message(WARNING "Optional library MA57 was not found.")
 else()
    message(WARNING "Optional library HSL was not found.")
    find_library(MA57 ma57)
@@ -140,7 +140,8 @@ else()
 endif()
 if(HSL OR MA57)
    list(APPEND UNO_SOURCE_FILES uno/solvers/MA57/MA57Solver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MA57SolverTests.cpp)
+   list(APPEND TESTS_UNO_SOURCE_FILES unotest/MA57SolverTests.cpp)
+   link_to_uno(ma57 ${MA57})
    
    find_package(BLAS REQUIRED)
    list(APPEND LIBRARIES ${BLAS_LIBRARIES})
@@ -155,13 +156,11 @@ endif()
    add_definitions("-D HAS_METIS")
 # endif()
 
-# BQPD
 find_library(BQPD bqpd)
 if(NOT BQPD)
    message(WARNING "Optional library BQPD was not found.")
 else()
    list(APPEND UNO_SOURCE_FILES uno/solvers/BQPD/BQPDSolver.cpp uno/solvers/BQPD/wdotd.f)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/BQPDSolverTests.cpp)
    link_to_uno(bqpd ${BQPD})
 endif()
 
