@@ -146,7 +146,7 @@ if(NOT MUMPS_LIBRARY)
 else()
    list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
    list(APPEND TESTS_UNO_SOURCE_FILES unotest/MUMPSSolverTests.cpp)
-   list(APPEND LIBRARIES libdmumps)
+   list(APPEND LIBRARIES mumps::libdmumps)
    
    # list(APPEND DIRECTORIES ${MUMPS_INCLUDE_DIR})
    
