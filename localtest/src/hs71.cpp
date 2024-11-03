@@ -22,14 +22,13 @@ int main() {
    options.overwrite_with(solvers_options);
 
    std::unique_ptr<uno::Model> hs_model = std::make_unique<local::HS71>();
-   
-   uno::Iterate initial_iterate(hs_model->number_variables, hs_model->number_constraints);
-   hs_model->initial_primal_point(initial_iterate.primals);
-   hs_model->project_onto_variable_bounds(initial_iterate.primals);
-   hs_model->initial_dual_point(initial_iterate.multipliers.constraints);
-   initial_iterate.feasibility_multipliers.reset();
-
    std::unique_ptr<uno::Model> model = uno::ModelFactory::reformulate(std::move(hs_model), options);
+   
+   uno::Iterate initial_iterate(model->number_variables, model->number_constraints);
+   model->initial_primal_point(initial_iterate.primals);
+   model->project_onto_variable_bounds(initial_iterate.primals);
+   model->initial_dual_point(initial_iterate.multipliers.constraints);
+   initial_iterate.feasibility_multipliers.reset();
 
    auto constraint_relaxation_strategy = uno::ConstraintRelaxationStrategyFactory::create(*model, options);
    auto globalization_mechanism = uno::GlobalizationMechanismFactory::create(*constraint_relaxation_strategy, options);
