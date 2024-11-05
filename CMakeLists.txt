@@ -81,7 +81,7 @@ endif()
 if(HSL OR MA57)
    list(APPEND UNO_SOURCE_FILES uno/solvers/MA57/MA57Solver.cpp)
    list(APPEND TESTS_UNO_SOURCE_FILES unotest/MA57SolverTests.cpp)
-   
+endif()
 
 list(APPEND LIBRARIES metis::metis)
 list(APPEND UNO_DEFINES HAS_METIS)
@@ -93,12 +93,19 @@ list(APPEND LIBRARIES bqpd::bqpd_sparse)
 list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
 list(APPEND TESTS_UNO_SOURCE_FILES unotest/MUMPSSolverTests.cpp)
 list(APPEND LIBRARIES mumps::libdmumps)
-   
-# Add more options
 list(APPEND UNO_DEFINES MUMPS_SEQUENTIAL)
-
-list(APPEND LIBRARIES metis::metis)
 list(APPEND UNO_DEFINES HAS_MUMPS)
+
+find_package(HIGHS)
+if(NOT HIGHS)
+   message(WARNING "Optional library HiGHS was not found.")
+else()
+   list(APPEND UNO_SOURCE_FILES uno/solvers/HiGHS/HiGHSSolver.cpp)
+   list(APPEND TESTS_UNO_SOURCE_FILES unotest/HiGHSSolverTests.cpp)
+   link_to_uno(highs ${HIGHS})
+   list(APPEND LIBRARIES highs::highs)
+endif()
+
 
 
 ###############
