@@ -99,6 +99,17 @@ list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/BQPDSolverTests.cpp)
 list(APPEND UNO_DEFINES HAS_BQPD)
 list(APPEND LIBRARIES bqpd::bqpd_sparse)
 
+# HiGHS
+find_package(HIGHS)
+if(NOT HIGHS)
+   message(WARNING "Optional library HiGHS was not found.")
+else()
+   list(APPEND UNO_SOURCE_FILES uno/solvers/HiGHS/HiGHSSolver.cpp)
+   list(APPEND TESTS_UNO_SOURCE_FILES unotest/HiGHSSolverTests.cpp)
+   link_to_uno(highs ${HIGHS})
+   list(APPEND LIBRARIES highs::highs)
+endif()
+
 # MUMPS
 list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
 list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MUMPSSolverTests.cpp)
