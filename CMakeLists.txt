@@ -56,6 +56,14 @@ foreach(file ${UNO_HEADER_FILES})
    list(APPEND UNO_HEADER_REL ${relpath})
 endforeach()
 
+file(GLOB_RECURSE UNO_HEADER_FILES uno/*.hpp)
+
+set(UNO_HEADER_REL)
+foreach(file ${UNO_HEADER_FILES})
+   file(RELATIVE_PATH relpath ${CMAKE_CURRENT_SOURCE_DIR} ${file})
+   list(APPEND UNO_HEADER_REL ${relpath})
+endforeach()
+
 # unit test source files
 file(GLOB TESTS_UNO_SOURCE_FILES unotest/unit_tests/*.cpp)
 
@@ -127,6 +135,13 @@ target_link_libraries(uno PUBLIC ${LIBRARIES})
 
 
 target_compile_options(uno PRIVATE -Wall -Wextra $<$<COMPILE_LANGUAGE:C,CXX>:-Wnon-virtual-dtor> $<$<PLATFORM_ID:UNIX>:-pedantic> -Wunused-value -Wconversion $<$<CXX_COMPILER_ID:GNU>:-Wmaybe-uninitialized>)
+
+target_sources(uno PUBLIC
+      FILE_SET public_headers
+      TYPE HEADERS
+      BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+      FILES ${UNO_HEADER_FILES}
+)  
 
 target_sources(uno PUBLIC
       FILE_SET public_headers
