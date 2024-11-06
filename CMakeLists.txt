@@ -62,27 +62,7 @@ endif()
 set(DIRECTORIES uno ${CMAKE_BINARY_DIR}/include)
 
 # source files
-file(GLOB UNO_SOURCE_FILES
-   uno/Uno.cpp
-   uno/ingredients/constraint_relaxation_strategies/*.cpp
-   uno/ingredients/globalization_mechanisms/*.cpp
-   uno/ingredients/globalization_strategies/*.cpp
-   uno/ingredients/globalization_strategies/switching_methods/*.cpp
-   uno/ingredients/globalization_strategies/switching_methods/filter_methods/*.cpp
-   uno/ingredients/globalization_strategies/switching_methods/filter_methods/filters/*.cpp
-   uno/ingredients/globalization_strategies/switching_methods/funnel_methods/*.cpp
-   uno/ingredients/hessian_models/*.cpp
-   uno/ingredients/subproblems/*.cpp
-   uno/ingredients/subproblems/inequality_constrained_methods/*.cpp
-   uno/ingredients/subproblems/interior_point_methods/*.cpp
-   uno/model/*.cpp
-   uno/optimization/*.cpp
-   uno/options/*.cpp
-   uno/preprocessing/*.cpp
-   uno/reformulation/*.cpp
-   uno/solvers/*.cpp
-   uno/tools/*.cpp
-)
+file(GLOB_RECURSE UNO_SOURCE_FILES uno/*.cpp)
 
 file(GLOB_RECURSE UNO_HEADER_FILES uno/*.hpp)
 
@@ -93,129 +73,37 @@ foreach(file ${UNO_HEADER_FILES})
 endforeach()
 
 # unit test source files
-file(GLOB TESTS_UNO_SOURCE_FILES
-   unotest/unit_tests/unotest.cpp
-   unotest/unit_tests/CollectionAdapterTests.cpp
-   unotest/unit_tests/ConcatenationTests.cpp
-   unotest/unit_tests/COOSparseStorageTests.cpp
-   unotest/unit_tests/CSCSparseStorageTests.cpp
-   unotest/unit_tests/MatrixVectorProductTests.cpp
-   unotest/unit_tests/RangeTests.cpp
-   unotest/unit_tests/ScalarMultipleTests.cpp
-   unotest/unit_tests/SparseVectorTests.cpp
-   unotest/unit_tests/SumTests.cpp
-   unotest/unit_tests/VectorTests.cpp
-   unotest/unit_tests/VectorViewTests.cpp
-)
+file(GLOB TESTS_UNO_SOURCE_FILES unotest/*.cpp)
 
 #########################
 # external dependencies #
 #########################
-set(LIBRARIES "")
+set(LIBRARIES)
+set(UNO_DEFINES)
 
-# function that links an existing library to Uno
-function(link_to_uno library_name library_path)
-   # add the library
-   set(LIBRARIES ${LIBRARIES} ${library_path} PARENT_SCOPE)
-   # add a preprocessor definition
-   string(TOUPPER ${library_name} library_name_upper)
-   add_definitions("-D HAS_${library_name_upper}")
-   # include the corresponding directory
-   get_filename_component(directory ${library_path} DIRECTORY)
-   set(DIRECTORIES ${DIRECTORIES} ${directory} PARENT_SCOPE)
-   message(STATUS "Library ${library_name} was found.")
-endfunction()
 
-# detect optional libraries: ma57 metis bqpd
-# find_library(MA57 ma57 NAMES ma57 hsl)
-# if(NOT MA57)
-#    message(WARNING "Optional library MA57 was not found.")
-# else()
-#    message(WARNING "Optional library HSL was not found.")
-#    find_library(MA57 ma57)
-#    if(MA57)
-#       link_to_uno(ma57 ${MA57})
-#    else()
-#       message(WARNING "Optional library MA57 was not found.")
-#    endif()
-# endif()
-# if(HSL OR MA57)
 #    list(APPEND UNO_SOURCE_FILES uno/solvers/MA57/MA57Solver.cpp)
 #    list(APPEND TESTS_UNO_SOURCE_FILES unotest/MA57SolverTests.cpp)
-#    link_to_uno(ma57 ${MA57})
-   
-#    find_package(BLAS REQUIRED)
-#    list(APPEND LIBRARIES ${BLAS_LIBRARIES})
-# endif()
-
-# find_library(metis metis)
-# if(${metis} STREQUAL "metis-NOTFOUND")
-#    message(WARNING "Optional library METIS was not found.")
-# else()
-   # link_to_uno(metis ${metis})
-   set(LIBRARIES ${LIBRARIES} metis::metis)
-   add_definitions("-D HAS_METIS")
-# endif()
-
-# find_library(bqpd bqpd)
-# if(${bqpd} STREQUAL "bqpd-NOTFOUND")
-#    message(WARNING "Optional library BQPD was not found.")
-# else()
-   list(APPEND UNO_SOURCE_FILES uno/solvers/BQPD/BQPDSolver.cpp uno/solvers/BQPD/wdotd.f)
-   add_definitions("-D HAS_BQPD")
-   set(LIBRARIES ${LIBRARIES} bqpd::bqpd_sparse)
-#    link_to_uno(bqpd ${bqpd})
-# endif()
-
-# find_package(MUMPS)
-# if(${MUMPS_LIBRARY} STREQUAL "MUMPS_LIBRARY-NOTFOUND")
-#    message(WARNING "Optional library MUMPS was not found.")
-# else()
-   list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/MUMPSSolverTests.cpp)
-   list(APPEND LIBRARIES mumps::libdmumps)
-   
-   # list(APPEND DIRECTORIES ${MUMPS_INCLUDE_DIR})
+#    list(APPEND UNO_DEFINES HAS_MA57)
    
 
-   # if(${MUMPS_MPISEQ_LIBRARY} STREQUAL "MUMPS_MPISEQ_LIBRARY-NOTFOUND")
-   #    # parallel
-   #    add_definitions("-D MUMPS_PARALLEL")
-   #    find_package(MPI REQUIRED)
-   #    list(APPEND LIBRARIES MPI::MPI_CXX MPI::MPI_Fortran)
-   #    add_definitions("-D HAS_MPI")
+list(APPEND LIBRARIES metis::metis)
+list(APPEND UNO_DEFINES HAS_METIS)
 
-   #    find_package(BLACS REQUIRED)
-   #    list(APPEND LIBRARIES ${BLACS_LIBRARY})
-   #    list(APPEND DIRECTORIES ${BLACS_INCLUDE_DIRS})
+list(APPEND UNO_SOURCE_FILES uno/solvers/BQPD/BQPDSolver.cpp uno/solvers/BQPD/wdotd.f)
+list(APPEND UNO_DEFINES HAS_BQPD)
+list(APPEND LIBRARIES bqpd::bqpd_sparse)
 
-   #    find_package(ScaLAPACK REQUIRED)
-   #    list(APPEND LIBRARIES ${ScaLAPACK_LIBRARY})
-   #    list(APPEND DIRECTORIES ${ScaLAPACK_INCLUDE_DIRS})
-   # else()
-      # sequential
-      add_definitions("-D MUMPS_SEQUENTIAL")
-      # link dummy parallel library (provided by MUMPS distribution)
-      # link_to_uno(MUMPS_MPISEQ_LIBRARY ${MUMPS_MPISEQ_LIBRARY})
-   # endif()
+list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
+list(APPEND TESTS_UNO_SOURCE_FILES unotest/MUMPSSolverTests.cpp)
+list(APPEND LIBRARIES mumps::libdmumps)
    
-   # find_package(METIS REQUIRED)
-   list(APPEND LIBRARIES metis::metis)
-   # list(APPEND DIRECTORIES ${METIS_INCLUDE_DIRS})
-   
-   # find_package(BLAS REQUIRED)
-   # list(APPEND LIBRARIES ${BLAS_LIBRARIES})
-   
-   # include(FindOpenMP)
-   # if (WIN32)
-   # find_package(OpenMP REQUIRED)
-   # else()
-   # find_package(OpenMP REQUIRED C)
-   # list(APPEND LIBRARIES OpenMP::OpenMP_C)
-   # endif()
+# Add more options
+list(APPEND UNO_DEFINES MUMPS_SEQUENTIAL)
 
-   add_definitions("-D HAS_MUMPS")
-# endif()
+list(APPEND LIBRARIES metis::metis)
+list(APPEND UNO_DEFINES HAS_MUMPS)
+
 
 ###############
 # Uno library #
@@ -224,25 +112,16 @@ add_library(uno STATIC ${UNO_SOURCE_FILES})
 set_target_properties(uno PROPERTIES 
       POSITION_INDEPENDENT_CODE ON
       MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-target_include_directories(uno PUBLIC ${DIRECTORIES})
+target_include_directories(uno PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/uno> $<INSTALL_INTERFACE:include/uno>)
+target_include_directories(uno PRIVATE ${CMAKE_BINARY_DIR}/include)
+target_compile_definitions(uno PUBLIC ${UNO_DEFINES})
 target_link_libraries(uno PUBLIC ${LIBRARIES})
 
-if (MSVC)
-   target_compile_options(uno PUBLIC /utf-8)
-endif(MSVC)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(uno PUBLIC 
-                              $<$<COMPILE_LANGUAGE:CXX>:/W4>
-                              $<$<COMPILE_LANGUAGE:Fortran>:-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion>)
-else()
-   target_compile_options(uno PUBLIC -Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion)
-   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmaybe-uninitialized")
-   endif()
-   # set(CMAKE_CXX_FLAGS_DEBUG "-pg")
-   # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
-endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+target_compile_options(uno PUBLIC -Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmaybe-uninitialized")
+endif()
 
 
 # copy the option file
@@ -258,22 +137,14 @@ target_sources(uno PUBLIC
 ######################
 # optional AMPL main #
 ######################
-# find_library(amplsolver amplsolver)
-# if(${amplsolver} STREQUAL "amplsolver-NOTFOUND")
-#    message(WARNING "Optional library amplsolver (ASL) was not found.")
-# else()
-   # message(STATUS "Library amplsolver was found.")
-   add_executable(uno_ampl bindings/AMPL/AMPLModel.cpp bindings/AMPL/uno_ampl.cpp)
-   
-   target_link_libraries(uno_ampl PUBLIC uno ampl::ampl)
-   add_definitions("-D HAS_AMPLSOLVER")
-   set_target_properties(uno_ampl PROPERTIES 
-      POSITION_INDEPENDENT_CODE ON
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-   # include the corresponding directory
-   # get_filename_component(directory ${amplsolver} DIRECTORY)
-   # include_directories(${directory})
-# endif()
+
+add_executable(uno_ampl bindings/AMPL/AMPLModel.cpp bindings/AMPL/uno_ampl.cpp)
+
+target_link_libraries(uno_ampl PUBLIC uno ampl::ampl)
+add_definitions("-D HAS_AMPLSOLVER")
+set_target_properties(uno_ampl PROPERTIES 
+   POSITION_INDEPENDENT_CODE ON
+   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 ##################################
 # optional GoogleTest unit tests #
@@ -299,3 +170,8 @@ install(TARGETS uno
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${CMAKE_BUILD_TYPE}
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${CMAKE_BUILD_TYPE}
       FILE_SET public_headers)
+
+install(EXPORT unoTargets
+      FILE unoTargets.cmake
+      NAMESPACE uno::
+      DESTINATION cmake)
