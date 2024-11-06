@@ -28,6 +28,7 @@ include($ENV{CMAKE_INSTALL_PREFIX}/cmake/AMPLTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/bqpdTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/mumpsTargets.cmake)
 
+include(CMakeGraphVizOptions)
 include(FortranCInterface)
 FortranCInterface_VERIFY(CXX)
 
@@ -82,6 +83,14 @@ file(GLOB UNO_SOURCE_FILES
    uno/solvers/*.cpp
    uno/tools/*.cpp
 )
+
+file(GLOB_RECURSE UNO_HEADER_FILES uno/*.hpp)
+
+set(UNO_HEADER_REL)
+foreach(file ${UNO_HEADER_FILES})
+   file(RELATIVE_PATH relpath ${CMAKE_CURRENT_SOURCE_DIR} ${file})
+   list(APPEND UNO_HEADER_REL ${relpath})
+endforeach()
 
 # unit test source files
 file(GLOB TESTS_UNO_SOURCE_FILES
@@ -235,14 +244,16 @@ else()
    # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
 endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-   add_compile_options(-fsanitize=address)
-   add_link_options(-fsanitize=address -static-libasan)
-endif()
-
 
 # copy the option file
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/uno.options DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+target_sources(uno PUBLIC
+      FILE_SET public_headers
+      TYPE HEADERS
+      BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+      FILES ${UNO_HEADER_FILES}
+)  
 
 ######################
 # optional AMPL main #
@@ -280,3 +291,11 @@ if(WITH_GTEST)
 endif()
 
 add_subdirectory(localtest)
+
+# install the library
+install(TARGETS uno
+      EXPORT unoTargets
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/${CMAKE_BUILD_TYPE}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${CMAKE_BUILD_TYPE}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${CMAKE_BUILD_TYPE}
+      FILE_SET public_headers)
