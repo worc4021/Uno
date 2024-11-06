@@ -55,6 +55,14 @@ foreach(file ${UNO_HEADER_FILES})
    list(APPEND UNO_HEADER_REL ${relpath})
 endforeach()
 
+file(GLOB_RECURSE UNO_HEADER_FILES uno/*.hpp)
+
+set(UNO_HEADER_REL)
+foreach(file ${UNO_HEADER_FILES})
+   file(RELATIVE_PATH relpath ${CMAKE_CURRENT_SOURCE_DIR} ${file})
+   list(APPEND UNO_HEADER_REL ${relpath})
+endforeach()
+
 # unit test source files
 file(GLOB TESTS_UNO_SOURCE_FILES unotest/*.cpp)
 
@@ -148,10 +156,18 @@ target_compile_definitions(uno PUBLIC ${UNO_DEFINES})
 target_link_libraries(uno PUBLIC ${LIBRARIES})
 
 
-target_compile_options(uno PUBLIC -Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion)
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmaybe-uninitialized")
-endif()
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(uno PUBLIC 
+                              $<$<COMPILE_LANGUAGE:CXX>:/W4>
+                              $<$<COMPILE_LANGUAGE:Fortran>:-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion>)
+else()
+   target_compile_options(uno PUBLIC -Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion)
+   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmaybe-uninitialized")
+   endif()
+   # set(CMAKE_CXX_FLAGS_DEBUG "-pg")
+   # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 
 # copy the option file
