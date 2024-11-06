@@ -156,18 +156,10 @@ target_compile_definitions(uno PUBLIC ${UNO_DEFINES})
 target_link_libraries(uno PUBLIC ${LIBRARIES})
 
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(uno PUBLIC 
-                              $<$<COMPILE_LANGUAGE:CXX>:/W4>
-                              $<$<COMPILE_LANGUAGE:Fortran>:-Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion>)
-else()
-   target_compile_options(uno PUBLIC -Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion)
-   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmaybe-uninitialized")
-   endif()
-   # set(CMAKE_CXX_FLAGS_DEBUG "-pg")
-   # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") # disable asserts
-endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+target_compile_options(uno PUBLIC -Wall -Wextra -Wnon-virtual-dtor -pedantic -Wunused-value -Wconversion)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmaybe-uninitialized")
+endif()
 
 
 # copy the option file
