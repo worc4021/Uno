@@ -97,7 +97,10 @@ else()
 endif()
 if(HSL OR MA57)
    list(APPEND UNO_SOURCE_FILES uno/solvers/MA57/MA57Solver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/MA57SolverTests.cpp)
+   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MA57SolverTests.cpp)
+   
+   find_package(BLAS REQUIRED)
+   list(APPEND LIBRARIES ${BLAS_LIBRARIES})
 endif()
 
 list(APPEND LIBRARIES metis::metis)
@@ -118,11 +121,21 @@ if(NOT HIGHS)
    message(WARNING "Optional library HiGHS was not found.")
 else()
    list(APPEND UNO_SOURCE_FILES uno/solvers/HiGHS/HiGHSSolver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/HiGHSSolverTests.cpp)
+   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/HiGHSSolverTests.cpp)
    link_to_uno(highs ${HIGHS})
    list(APPEND LIBRARIES highs::highs)
 endif()
 
+# MUMPS
+find_package(MUMPS)
+if(NOT MUMPS_LIBRARY)
+   message(WARNING "Optional library MUMPS was not found.")
+else()
+   list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
+   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MUMPSSolverTests.cpp)
+   list(APPEND LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_PORD_LIBRARY})
+   
+   list(APPEND DIRECTORIES ${MUMPS_INCLUDE_DIR})
 
 
 ###############
