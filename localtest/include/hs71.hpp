@@ -8,12 +8,40 @@
 #include "linear_algebra/Vector.hpp"
 #include "linear_algebra/RectangularMatrix.hpp"
 #include "linear_algebra/SymmetricMatrix.hpp"
-#include "optimization/Multipliers.hpp"
+#include "optimization/Iterate.hpp"
 #include "symbolic/CollectionAdapter.hpp"
+#include "tools/Timer.hpp"
 
 namespace local
 {
 
+    struct Result
+    {
+        struct Solution {
+            std::vector<double> primals;
+            std::vector<double> duals_lb_x;
+            std::vector<double> duals_ub_x;
+            std::vector<double> duals_constraints;
+            Solution(size_t number_variables, size_t number_constraints)
+                : primals(number_variables)
+                , duals_lb_x(number_variables)
+                , duals_ub_x(number_variables)
+                , duals_constraints(number_constraints)
+            {
+            }
+        } solution;
+        size_t number_variables;
+        size_t number_constraints;
+        double cpu_time;
+        
+        Result(std::size_t number_variables, std::size_t number_constraints)
+            : solution(number_variables, number_constraints)
+            , number_variables(number_variables)
+            , number_constraints(number_constraints)
+            , cpu_time(0.)
+        {
+        }
+    };
     class DataModel : public uno::Model
     {
     protected:
@@ -29,6 +57,8 @@ namespace local
         
 
         uno::SparseVector<size_t> _slacks{};
+
+        uno::Timer _timer;
     private:
         // lists of variables and constraints + corresponding collection objects
         std::vector<size_t> _equality_constraints;
@@ -46,7 +76,7 @@ namespace local
         uno::CollectionAdapter<std::vector<size_t> &> _single_upper_bounded_variables_collection;
         uno::CollectionAdapter<std::vector<size_t> &> _linear_constraints_collection;
 
-
+        local::Result _result;
     public:
         DataModel(size_t number_variables, size_t number_constraints, const std::string &name = "DataModel")
             : uno::Model(name, number_variables, number_constraints, 1.),
@@ -59,6 +89,7 @@ namespace local
               _constraint_status(number_constraints),
               _linear_constraints(0),
               _slacks(0),
+              _timer(),
               _equality_constraints(0),
               _inequality_constraints(0),
               _equality_constraints_collection(_equality_constraints),
@@ -72,7 +103,9 @@ namespace local
               _single_upper_bounded_variables(0),
               _fixed_variables(0),
               _single_upper_bounded_variables_collection(_single_upper_bounded_variables),
-              _linear_constraints_collection(_linear_constraints) {}
+              _linear_constraints_collection(_linear_constraints),
+              _result(number_variables, number_constraints)
+            {}
 
         virtual ~DataModel() override = default;
 
@@ -147,6 +180,15 @@ namespace local
             return _constraint_type[constraint_index];
         }
 
+        virtual void postprocess_solution(uno::Iterate &iterate, uno::TerminationStatus termination_status) const override {
+            std::copy(iterate.primals.begin(), iterate.primals.end(), const_cast<local::DataModel*>(this)->_result.solution.primals.begin());
+            std::copy(iterate.multipliers.lower_bounds.begin(), iterate.multipliers.lower_bounds.end(), const_cast<local::DataModel*>(this)->_result.solution.duals_lb_x.begin());
+            std::copy(iterate.multipliers.upper_bounds.begin(), iterate.multipliers.upper_bounds.end(), const_cast<local::DataModel*>(this)->_result.solution.duals_ub_x.begin());
+            std::copy(iterate.multipliers.constraints.begin(), iterate.multipliers.constraints.end(), const_cast<local::DataModel*>(this)->_result.solution.duals_constraints.begin());
+            
+            const_cast<local::DataModel*>(this)->_result.cpu_time = _timer.get_duration();
+        }
+
         void initialise_from_data()
         {
             for (std::size_t i = 0; i < number_variables; ++i)
@@ -209,6 +251,8 @@ namespace local
                 }
             }
         }
+
+        const local::Result &get_result() const { return _result; }
     };
 
     class HS71
@@ -297,10 +341,6 @@ namespace local
 
         void initial_dual_point(uno::Vector<double> &multipliers) const override {
             std::fill(multipliers.begin(), multipliers.end(), 0.0);
-        }
-
-        void postprocess_solution(uno::Iterate &iterate, uno::TerminationStatus termination_status) const override {
-
         }
 
         size_t number_objective_gradient_nonzeros() const override { return number_variables; }
