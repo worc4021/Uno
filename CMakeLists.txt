@@ -27,6 +27,7 @@ include($ENV{CMAKE_INSTALL_PREFIX}/cmake/metisTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/AMPLTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/bqpdTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/mumpsTargets.cmake)
+# include($ENV{CMAKE_INSTALL_PREFIX}/lib/cmake/highs/highs-targets.cmake)
 
 include(CMakeGraphVizOptions)
 include(FortranCInterface)
@@ -61,18 +62,11 @@ endif()
 # directories
 set(DIRECTORIES uno ${CMAKE_BINARY_DIR}/include)
 
-# source files
 file(GLOB_RECURSE UNO_SOURCE_FILES uno/*.cpp)
+file(GLOB_RECURSE UNO_SOLVER_FILES uno/solvers/*/*.cpp)
+list(REMOVE_ITEM UNO_SOURCE_FILES ${UNO_SOLVER_FILES})
 
-file(GLOB_RECURSE UNO_HEADER_FILES uno/*.hpp)
-
-set(UNO_HEADER_REL)
-foreach(file ${UNO_HEADER_FILES})
-   file(RELATIVE_PATH relpath ${CMAKE_CURRENT_SOURCE_DIR} ${file})
-   list(APPEND UNO_HEADER_REL ${relpath})
-endforeach()
-
-file(GLOB_RECURSE UNO_HEADER_FILES uno/*.hpp)
+file(GLOB_RECURSE UNO_HEADER_FILES uno/*/*.hpp)
 
 set(UNO_HEADER_REL)
 foreach(file ${UNO_HEADER_FILES})
@@ -81,7 +75,7 @@ foreach(file ${UNO_HEADER_FILES})
 endforeach()
 
 # unit test source files
-file(GLOB TESTS_UNO_SOURCE_FILES unotest/*.cpp)
+file(GLOB TESTS_UNO_SOURCE_FILES unotest/unit_tests/*.cpp)
 
 #########################
 # external dependencies #
@@ -92,50 +86,28 @@ set(UNO_DEFINES)
 
 # HSL or MA57
 find_library(HSL hsl)
-if(HSL)
-   link_to_uno(hsl ${HSL})
-else()
-   message(WARNING "Optional library HSL was not found.")
-   find_library(MA57 ma57)
-   if(MA57)
-      link_to_uno(ma57 ${MA57})
-   else()
-      message(WARNING "Optional library MA57 was not found.")
-   endif()
-endif()
 if(HSL OR MA57)
    list(APPEND UNO_SOURCE_FILES uno/solvers/MA57/MA57Solver.cpp)
    list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MA57SolverTests.cpp)
    
-#    find_package(BLAS REQUIRED)
-#    list(APPEND LIBRARIES ${BLAS_LIBRARIES})
-# endif()
+   find_package(BLAS REQUIRED)
+   list(APPEND LIBRARIES ${BLAS_LIBRARIES})
+endif()
 
-list(APPEND LIBRARIES metis::metis)
-list(APPEND UNO_DEFINES HAS_METIS)
-
+# BQPD
 list(APPEND UNO_SOURCE_FILES uno/solvers/BQPD/BQPDSolver.cpp uno/solvers/BQPD/wdotd.f)
+list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/BQPDSolverTests.cpp)
 list(APPEND UNO_DEFINES HAS_BQPD)
 list(APPEND LIBRARIES bqpd::bqpd_sparse)
 
+# MUMPS
 list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
 list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MUMPSSolverTests.cpp)
 list(APPEND LIBRARIES mumps::libdmumps)
 list(APPEND UNO_DEFINES MUMPS_SEQUENTIAL)
 list(APPEND UNO_DEFINES HAS_MUMPS)
-# BQPD
-find_library(BQPD bqpd)
-if(NOT BQPD)
-   message(WARNING "Optional library BQPD was not found.")
-else()
-   list(APPEND UNO_SOURCE_FILES uno/solvers/BQPD/BQPDSolver.cpp uno/solvers/BQPD/wdotd.f)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/BQPDSolverTests.cpp)
-   link_to_uno(bqpd ${BQPD})
-endif()
-   add_definitions("-D HAS_BQPD")
-   set(LIBRARIES ${LIBRARIES} bqpd::bqpd_sparse)
-#    link_to_uno(bqpd ${bqpd})
-# endif()
+list(APPEND UNO_DEFINES HAS_METIS)
+
 
 find_package(HIGHS)
 if(NOT HIGHS)
@@ -146,18 +118,6 @@ else()
    link_to_uno(highs ${HIGHS})
    list(APPEND LIBRARIES highs::highs)
 endif()
-
-# MUMPS
-find_package(MUMPS)
-if(NOT MUMPS_LIBRARY)
-   message(WARNING "Optional library MUMPS was not found.")
-else()
-   list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/MUMPSSolverTests.cpp)
-   list(APPEND LIBRARIES mumps::libdmumps)
-   
-   # list(APPEND DIRECTORIES ${MUMPS_INCLUDE_DIR})
-   
 
 
 ###############
@@ -178,10 +138,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmaybe-uninitialized")
 endif()
 
-
-# copy the option file
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/uno.options DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
 target_sources(uno PUBLIC
       FILE_SET public_headers
       TYPE HEADERS
@@ -196,7 +152,7 @@ target_sources(uno PUBLIC
 add_executable(uno_ampl bindings/AMPL/AMPLModel.cpp bindings/AMPL/uno_ampl.cpp)
 
 target_link_libraries(uno_ampl PUBLIC uno ampl::ampl)
-add_definitions("-D HAS_AMPLSOLVER")
+target_compile_definitions(uno_ampl PRIVATE HAS_AMPLSOLVER)
 set_target_properties(uno_ampl PROPERTIES 
    POSITION_INDEPENDENT_CODE ON
    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
