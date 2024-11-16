@@ -27,7 +27,6 @@ include($ENV{CMAKE_INSTALL_PREFIX}/cmake/metisTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/AMPLTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/bqpdTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/mumpsTargets.cmake)
-# include($ENV{CMAKE_INSTALL_PREFIX}/lib/cmake/highs/highs-targets.cmake)
 
 include(CMakeGraphVizOptions)
 include(FortranCInterface)
