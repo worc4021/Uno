@@ -115,7 +115,7 @@ target_compile_definitions(uno PUBLIC ${UNO_DEFINES})
 target_link_libraries(uno PUBLIC ${LIBRARIES})
 
 
-target_compile_options(uno PRIVATE -Wall -Wextra $<$<COMPILE_LANGUAGE:C,CXX>:-Wnon-virtual-dtor> -pedantic -Wunused-value -Wconversion $<$<CXX_COMPILER_ID:GNU>:-Wmaybe-uninitialized>)
+target_compile_options(uno PRIVATE -Wall -Wextra $<$<COMPILE_LANGUAGE:C,CXX>:-Wnon-virtual-dtor> $<$<PLATFORM_ID:UNIX>:-pedantic> -Wunused-value -Wconversion $<$<CXX_COMPILER_ID:GNU>:-Wmaybe-uninitialized>)
 
 target_sources(uno PUBLIC
       FILE_SET public_headers
