@@ -13,10 +13,8 @@
 #include "options/DefaultOptions.hpp"
 #include "tools/Logger.hpp"
 
-
-
 int main() {
-
+   
    uno::Options options = uno::DefaultOptions::load();
    uno::Options solvers_options = uno::DefaultOptions::determine_solvers();
    options.overwrite_with(solvers_options);
@@ -39,6 +37,15 @@ int main() {
 
    // solve the instance
    uno.solve(*model, initial_iterate, options);
-   
+
+   auto res = static_cast<local::HS71*>(model.get())->get_result();
+   std::cout << "Elapsed time: " << res.cpu_time << " seconds\nSolution:[";
+   for (const auto &x : res.solution.primals) {
+      std::cout << x << ' ';
+   }
+   std::cout << "]\nDuals:\n";
+   for (std::size_t i = 0; i < res.number_constraints; ++i) {
+      std::cout << res.solution.duals_constraints[i] << ' ';
+   }
    return EXIT_SUCCESS;
 }
