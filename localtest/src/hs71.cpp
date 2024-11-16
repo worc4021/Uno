@@ -9,6 +9,7 @@
 #include "Uno.hpp"
 #include "model/ModelFactory.hpp"
 #include "options/Options.hpp"
+#include "options/Presets.hpp"
 #include "options/DefaultOptions.hpp"
 #include "tools/Logger.hpp"
 
@@ -17,10 +18,11 @@
 int main() {
 
    uno::Options options = uno::DefaultOptions::load();
-   uno::Options solvers_options = uno::DefaultOptions::determine_solvers_and_preset();
-   uno::Options::set_preset(solvers_options, "ipopt");
-   options["logger"] = "DISCRETE";
+   uno::Options solvers_options = uno::DefaultOptions::determine_solvers();
    options.overwrite_with(solvers_options);
+   uno::Options preset = uno::Presets::get_preset_options("filtersqp");
+   options["logger"] = "DISCRETE";
+   options.overwrite_with(preset);
 
    std::unique_ptr<uno::Model> hs_model = std::make_unique<local::HS71>();
    std::unique_ptr<uno::Model> model = uno::ModelFactory::reformulate(std::move(hs_model), options);
