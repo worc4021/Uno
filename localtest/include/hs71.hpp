@@ -10,6 +10,7 @@
 #include "linear_algebra/SymmetricMatrix.hpp"
 #include "optimization/Iterate.hpp"
 #include "symbolic/CollectionAdapter.hpp"
+#include "tools/UserCallbacks.hpp"
 #include "tools/Timer.hpp"
 
 namespace local
@@ -42,7 +43,8 @@ namespace local
         {
         }
     };
-    class DataModel : public uno::Model
+    class DataModel 
+        : public uno::Model
     {
     protected:
         std::vector<double> _variable_lower_bounds;
@@ -180,13 +182,8 @@ namespace local
             return _constraint_type[constraint_index];
         }
 
-        virtual void postprocess_solution(uno::Iterate &iterate, uno::TerminationStatus termination_status) const override {
-            std::copy(iterate.primals.begin(), iterate.primals.end(), const_cast<local::DataModel*>(this)->_result.solution.primals.begin());
-            std::copy(iterate.multipliers.lower_bounds.begin(), iterate.multipliers.lower_bounds.end(), const_cast<local::DataModel*>(this)->_result.solution.duals_lb_x.begin());
-            std::copy(iterate.multipliers.upper_bounds.begin(), iterate.multipliers.upper_bounds.end(), const_cast<local::DataModel*>(this)->_result.solution.duals_ub_x.begin());
-            std::copy(iterate.multipliers.constraints.begin(), iterate.multipliers.constraints.end(), const_cast<local::DataModel*>(this)->_result.solution.duals_constraints.begin());
+        void postprocess_solution(uno::Iterate &iterate, uno::TerminationStatus termination_status) const override {
             
-            const_cast<local::DataModel*>(this)->_result.cpu_time = _timer.get_duration();
         }
 
         void initialise_from_data()
@@ -349,6 +346,21 @@ namespace local
         
     };
 
+
+    class HS71UserCallbacks
+        : public uno::UserCallbacks
+    {
+        void notify_acceptable_iterate(const uno::Vector<double>& primals, const uno::Multipliers& multipliers, double objective_multiplier) override {
+
+        }
+        void notify_new_primals(const uno::Vector<double>& primals) override {
+
+        }
+        
+        void notify_new_multipliers(const uno::Multipliers& multipliers) override {
+
+        }
+    };
 } // namespace local
 
 #endif // NLPTEST_HS71_HPP
