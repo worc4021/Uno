@@ -56,14 +56,6 @@ foreach(file ${UNO_HEADER_FILES})
    list(APPEND UNO_HEADER_REL ${relpath})
 endforeach()
 
-file(GLOB_RECURSE UNO_HEADER_FILES uno/*.hpp)
-
-set(UNO_HEADER_REL)
-foreach(file ${UNO_HEADER_FILES})
-   file(RELATIVE_PATH relpath ${CMAKE_CURRENT_SOURCE_DIR} ${file})
-   list(APPEND UNO_HEADER_REL ${relpath})
-endforeach()
-
 # unit test source files
 file(GLOB TESTS_UNO_SOURCE_FILES unotest/unit_tests/*.cpp)
 
@@ -110,37 +102,6 @@ list(APPEND UNO_DEFINES HAS_MUMPS)
 list(APPEND UNO_DEFINES HAS_METIS)
 
 
-find_package(HIGHS)
-if(NOT HIGHS)
-   message(WARNING "Optional library HiGHS was not found.")
-else()
-   list(APPEND UNO_SOURCE_FILES uno/solvers/HiGHS/HiGHSSolver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/HiGHSSolverTests.cpp)
-   link_to_uno(highs ${HIGHS})
-   list(APPEND LIBRARIES highs::highs)
-endif()
-
-find_package(HIGHS)
-if(NOT HIGHS)
-   message(WARNING "Optional library HiGHS was not found.")
-else()
-   list(APPEND UNO_SOURCE_FILES uno/solvers/HiGHS/HiGHSSolver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/HiGHSSolverTests.cpp)
-   link_to_uno(highs ${HIGHS})
-   list(APPEND LIBRARIES highs::highs)
-endif()
-
-# MUMPS
-find_package(MUMPS)
-if(NOT MUMPS_LIBRARY)
-   message(WARNING "Optional library MUMPS was not found.")
-else()
-   list(APPEND UNO_SOURCE_FILES uno/solvers/MUMPS/MUMPSSolver.cpp)
-   list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MUMPSSolverTests.cpp)
-   list(APPEND LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_PORD_LIBRARY})
-   
-   list(APPEND DIRECTORIES ${MUMPS_INCLUDE_DIR})
-
 
 ###############
 # Uno library #
@@ -175,7 +136,7 @@ target_sources(uno PUBLIC
 # optional AMPL main #
 ######################
 
-add_executable(uno_ampl bindings/AMPL/AMPLModel.cpp bindings/AMPL/uno_ampl.cpp)
+add_executable(uno_ampl bindings/AMPL/AMPLModel.cpp bindings/AMPL/AMPLUserCallbacks.cpp bindings/AMPL/uno_ampl.cpp)
 
 target_link_libraries(uno_ampl PUBLIC uno ampl::ampl)
 target_compile_definitions(uno_ampl PRIVATE HAS_AMPLSOLVER)
