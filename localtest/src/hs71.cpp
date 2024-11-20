@@ -35,17 +35,18 @@ int main() {
    auto globalization_mechanism = uno::GlobalizationMechanismFactory::create(*constraint_relaxation_strategy, options);
    uno::Uno uno = uno::Uno(*globalization_mechanism, options);
 
+   local::HS71UserCallbacks user_callbacks{};
    // solve the instance
-   uno.solve(*model, initial_iterate, options);
+   uno.solve(*model, initial_iterate, options, user_callbacks);
 
-   auto res = static_cast<local::HS71*>(model.get())->get_result();
-   std::cout << "Elapsed time: " << res.cpu_time << " seconds\nSolution:[";
-   for (const auto &x : res.solution.primals) {
-      std::cout << x << ' ';
-   }
-   std::cout << "]\nDuals:\n";
-   for (std::size_t i = 0; i < res.number_constraints; ++i) {
-      std::cout << res.solution.duals_constraints[i] << ' ';
-   }
+   
+   // std::cout << "Elapsed time: " << res.cpu_time << " seconds\nSolution:[";
+   // for (const auto &x : res.solution.primals) {
+   //    std::cout << x << ' ';
+   // }
+   // std::cout << "]\nDuals:\n";
+   // for (std::size_t i = 0; i < res.number_constraints; ++i) {
+   //    std::cout << res.solution.duals_constraints[i] << ' ';
+   // }
    return EXIT_SUCCESS;
 }
