@@ -78,7 +78,7 @@ if(HSL OR MA57)
 endif()
 
 # BQPD
-list(APPEND UNO_SOURCE_FILES uno/solvers/BQPD/BQPDSolver.cpp uno/solvers/BQPD/wdotd.f)
+list(APPEND UNO_SOURCE_FILES uno/solvers/BQPD/BQPDSolver.cpp ) #uno/solvers/BQPD/wdotd.f)
 list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/BQPDSolverTests.cpp)
 list(APPEND UNO_DEFINES HAS_BQPD)
 list(APPEND LIBRARIES bqpd::bqpd_sparse)

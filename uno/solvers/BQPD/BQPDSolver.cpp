@@ -15,14 +15,13 @@
 #include "fortran_interface.h"
 
 #define WSC FC_GLOBAL(wsc,WSC)
-#define KKTALPHAC FC_GLOBAL(kktalphac,KKTALPHAC)
+#define ALPHAC FC_GLOBAL(alphac,ALPHAC)
 #define BQPD FC_GLOBAL(bqpd,BQPD)
+#define gdotx_impl FC_GLOBAL(gdotx, GDOTX)
 
-namespace uno {
-#define BIG 1e30
-
-   extern "C" {
-   // fortran common block used in bqpd/bqpd.f
+extern "C"
+{
+   void gdotx_impl(int *n, const double x[], const double ws[], const int lws[], double v[]);
    extern struct {
       int kk, ll, kkk, lll, mxws, mxlws;
    } WSC;
@@ -30,13 +29,19 @@ namespace uno {
    // fortran common for inertia correction in wdotd
    extern struct {
       double alpha;
-   } KKTALPHAC;
+   } ALPHAC;
 
    extern void
    BQPD(const int* n, const int* m, int* k, int* kmax, double* a, int* la, double* x, double* bl, double* bu, double* f, double* fmin, double* g,
          double* r, double* w, double* e, int* ls, double* alp, int* lp, int* mlp, int* peq, double* ws, int* lws, const int* mode, int* ifail,
          int* info, int* iprint, int* nout);
-   }
+   
+}
+
+namespace uno {
+#define BIG 1e30
+
+   
 
    // preallocate a bunch of stuff
    BQPDSolver::BQPDSolver(size_t number_variables, size_t number_constraints, size_t number_objective_gradient_nonzeros, size_t number_jacobian_nonzeros,
@@ -104,7 +109,7 @@ namespace uno {
       WSC.ll = static_cast<int>(this->size_hessian_sparsity);
       WSC.mxws = static_cast<int>(this->size_hessian_workspace);
       WSC.mxlws = static_cast<int>(this->size_hessian_sparsity_workspace);
-      KKTALPHAC.alpha = 0; // inertia control
+      ALPHAC.alpha = 0; // inertia control
 
       if (this->print_subproblem) {
          DEBUG << "objective gradient: " << linear_objective;
@@ -209,6 +214,10 @@ namespace uno {
          row_indices[index] = static_cast<int>(row_index) + this->fortran_shift;
          this->current_hessian_indices[column_index]++;
       }
+
+      intptr_t ptr = reinterpret_cast<intptr_t>(this);
+      std::copy(reinterpret_cast<const char *>(&ptr), reinterpret_cast<const char *>(&ptr) + sizeof(intptr_t), reinterpret_cast<char *>(hessian_sparsity.data() + hessian_sparsity[0]));
+      WSC.ll += sizeof(intptr_t);
    }
 
    void BQPDSolver::save_gradients_to_local_format(size_t number_constraints, const SparseVector<double>& linear_objective,
@@ -311,4 +320,23 @@ namespace uno {
       }
       throw std::invalid_argument("The BQPD ifail is not consistent with the Uno status values");
    }
+
+   void BQPDSolver::hessian_vector_product(const Vector<double>& vector, Vector<double>& result) const {
+      throw std::runtime_error("BQPDSolver::hessian_vector_product not implemented");
+   }
+
 } // namespace
+
+void gdotx_impl(int *n, const double x[], const double ws[], const int lws[], double v[])
+{
+   intptr_t ptr;
+   int offset = lws[0];
+   std::copy(reinterpret_cast<const char *>(&lws[offset]), reinterpret_cast<const char *>(&lws[offset]) + sizeof(intptr_t), reinterpret_cast<char *>(&ptr));
+   const uno::BQPDSolver *program = reinterpret_cast<const uno::BQPDSolver *>(ptr);
+   uno::Vector<double> vector(*n);
+   uno::Vector<double> result(*n);
+   std::copy_n(x, *n, vector.begin());
+   std::fill(result.begin(), result.end(), 0.);
+   program->hessian_vector_product(vector, result);
+
+}

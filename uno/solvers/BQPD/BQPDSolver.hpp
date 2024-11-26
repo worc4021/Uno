@@ -57,6 +57,8 @@ namespace uno {
             const RectangularMatrix<double>& constraint_jacobian, const SymmetricMatrix<size_t, double>& hessian, const Vector<double>& initial_point,
             Direction& direction, const WarmstartInformation& warmstart_information) override;
 
+      // Must be callable from static function
+      void hessian_vector_product(const Vector<double>& vector, Vector<double>& result) const;
    private:
       const size_t number_hessian_nonzeros;
       std::vector<double> lb{}, ub{}; // lower and upper bounds of variables and constraints
