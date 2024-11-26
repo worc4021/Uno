@@ -322,6 +322,7 @@ namespace uno {
    }
 
    void BQPDSolver::hessian_vector_product(const Vector<double>& vector, Vector<double>& result) const {
+      std::cout << "Hello! My first lower bound is " << lb[0] << " just to prove I'm not a void pointer." << std::endl;      
       throw std::runtime_error("BQPDSolver::hessian_vector_product not implemented");
    }
 
