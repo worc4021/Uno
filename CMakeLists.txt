@@ -126,13 +126,6 @@ target_sources(uno PUBLIC
       FILES ${UNO_HEADER_FILES}
 )  
 
-target_sources(uno PUBLIC
-      FILE_SET public_headers
-      TYPE HEADERS
-      BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-      FILES ${UNO_HEADER_FILES}
-)  
-
 ######################
 # optional AMPL main #
 ######################

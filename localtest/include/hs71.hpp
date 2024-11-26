@@ -182,7 +182,7 @@ namespace local
             return _constraint_type[constraint_index];
         }
 
-        void postprocess_solution(uno::Iterate &iterate, uno::TerminationStatus termination_status) const override {
+        void postprocess_solution(uno::Iterate &iterate, uno::IterateStatus termination_status) const override {
             
         }
 
