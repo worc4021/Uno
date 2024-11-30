@@ -10,7 +10,10 @@
                 "strategy": "external"
             },
             "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}"
+            "installDir": "${sourceDir}/out/install/${presetName}",
+            "cacheVariables": {
+                "WITH_GTEST": "ON"
+            }
         },
         {
             "name": "windows-conifg-base",
