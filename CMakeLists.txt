@@ -121,6 +121,7 @@ list(APPEND UNO_DEFINES HAS_MUMPS)
 list(APPEND UNO_DEFINES HAS_METIS)
 
 list(APPEND UNO_SOURCE_FILES uno/solvers/MA27/MA27Solver.cpp)
+list(APPEND TESTS_UNO_SOURCE_FILES unotest/functional_tests/MA27SolverTests.cpp)
 list(APPEND LIBRARIES coinhsl::coinhsl)
 list(APPEND UNO_DEFINES HAS_MA27)
 
@@ -166,13 +167,21 @@ set_target_properties(uno_ampl PROPERTIES
 option(WITH_GTEST "Enable GoogleTest" OFF)
 message(STATUS "GoogleTest: WITH_GTEST=${WITH_GTEST}")
 if(WITH_GTEST)
-   find_package(GTest CONFIG REQUIRED)
-   if(NOT GTest_DIR)
-      message(WARNING "Optional library GTest was not found.")
-   else()
-      add_executable(run_unotest ${TESTS_UNO_SOURCE_FILES})
-      target_link_libraries(run_unotest PUBLIC GTest::gtest uno)
-   endif()
+   enable_testing()
+   include(FetchContent)
+   FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+   )
+   # For Windows: Prevent overriding the parent project's compiler/linker settings
+   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+   FetchContent_MakeAvailable(googletest)
+
+   add_executable(run_unotest ${TESTS_UNO_SOURCE_FILES})
+   target_link_libraries(run_unotest PUBLIC GTest::gtest uno)
+   include(GoogleTest)
+   include(CTest)
+   gtest_discover_tests(run_unotest)
 endif()
 
 add_subdirectory(localtest)
