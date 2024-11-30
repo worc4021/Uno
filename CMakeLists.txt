@@ -27,6 +27,7 @@ include($ENV{CMAKE_INSTALL_PREFIX}/cmake/metisTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/AMPLTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/bqpdTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/mumpsTargets.cmake)
+include($ENV{CMAKE_INSTALL_PREFIX}/cmake/coinhslTargets.cmake)
 
 include(CMakeGraphVizOptions)
 include(FortranCInterface)
@@ -119,7 +120,9 @@ list(APPEND UNO_DEFINES MUMPS_SEQUENTIAL)
 list(APPEND UNO_DEFINES HAS_MUMPS)
 list(APPEND UNO_DEFINES HAS_METIS)
 
-
+list(APPEND UNO_SOURCE_FILES uno/solvers/MA27/MA27Solver.cpp)
+list(APPEND LIBRARIES coinhsl::coinhsl)
+list(APPEND UNO_DEFINES HAS_MA27)
 
 ###############
 # Uno library #
@@ -151,6 +154,8 @@ add_executable(uno_ampl bindings/AMPL/AMPLModel.cpp bindings/AMPL/AMPLUserCallba
 
 target_link_libraries(uno_ampl PUBLIC uno ampl::ampl)
 target_compile_definitions(uno_ampl PRIVATE HAS_AMPLSOLVER)
+# target_compile_options(uno_ampl PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fsanitize=address,undefined>)
+# target_link_options(uno_ampl PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fsanitize=address,undefined>)
 set_target_properties(uno_ampl PROPERTIES 
    POSITION_INDEPENDENT_CODE ON
    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
