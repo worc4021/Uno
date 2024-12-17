@@ -16,33 +16,6 @@
 namespace local
 {
 
-    struct Result
-    {
-        struct Solution {
-            std::vector<double> primals;
-            std::vector<double> duals_lb_x;
-            std::vector<double> duals_ub_x;
-            std::vector<double> duals_constraints;
-            Solution(size_t number_variables, size_t number_constraints)
-                : primals(number_variables)
-                , duals_lb_x(number_variables)
-                , duals_ub_x(number_variables)
-                , duals_constraints(number_constraints)
-            {
-            }
-        } solution;
-        size_t number_variables;
-        size_t number_constraints;
-        double cpu_time;
-        
-        Result(std::size_t number_variables, std::size_t number_constraints)
-            : solution(number_variables, number_constraints)
-            , number_variables(number_variables)
-            , number_constraints(number_constraints)
-            , cpu_time(0.)
-        {
-        }
-    };
     class DataModel 
         : public uno::Model
     {
@@ -78,7 +51,6 @@ namespace local
         uno::CollectionAdapter<std::vector<size_t> &> _single_upper_bounded_variables_collection;
         uno::CollectionAdapter<std::vector<size_t> &> _linear_constraints_collection;
 
-        local::Result _result;
     public:
         DataModel(size_t number_variables, size_t number_constraints, const std::string &name = "DataModel")
             : uno::Model(name, number_variables, number_constraints, 1.),
@@ -105,8 +77,7 @@ namespace local
               _single_upper_bounded_variables(0),
               _fixed_variables(0),
               _single_upper_bounded_variables_collection(_single_upper_bounded_variables),
-              _linear_constraints_collection(_linear_constraints),
-              _result(number_variables, number_constraints)
+              _linear_constraints_collection(_linear_constraints)
             {}
 
         virtual ~DataModel() override = default;
@@ -249,7 +220,6 @@ namespace local
             }
         }
 
-        const local::Result &get_result() const { return _result; }
     };
 
     class HS71
