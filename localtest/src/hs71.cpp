@@ -37,16 +37,20 @@ int main() {
 
    local::HS71UserCallbacks user_callbacks{};
    // solve the instance
-   uno.solve(*model, initial_iterate, options, user_callbacks);
+   uno::Result result = uno.solve(*model, initial_iterate, options, user_callbacks);
 
-   
-   // std::cout << "Elapsed time: " << res.cpu_time << " seconds\nSolution:[";
-   // for (const auto &x : res.solution.primals) {
-   //    std::cout << x << ' ';
-   // }
-   // std::cout << "]\nDuals:\n";
-   // for (std::size_t i = 0; i < res.number_constraints; ++i) {
-   //    std::cout << res.solution.duals_constraints[i] << ' ';
-   // }
+   if (result.optimization_status == uno::OptimizationStatus::SUCCESS) {
+      std::cout << " ------------------- Optimization successful ----------------\n";
+      result.print(true);
+   }
+   std::cout << "Elapsed time: " << result.cpu_time << " seconds\nSolution:[";
+   for (const auto &x : result.solution.primals) {
+      std::cout << x << ' ';
+   }
+   std::cout << "]\nDuals: [";
+   for (const auto &x : result.solution.multipliers.constraints) {
+      std::cout << x << ' ';
+   }
+   std::cout << "]\n";
    return EXIT_SUCCESS;
 }
