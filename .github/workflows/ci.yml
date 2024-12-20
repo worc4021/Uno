@@ -1,0 +1,91 @@
+name: Build
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: 
+  push:
+    branches: 
+    - main
+  pull_request:
+    branches: 
+    - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  id-token: write
+  packages: read
+  actions: read
+
+jobs:
+  linux-build:
+    strategy:
+      matrix:
+        toolchain:
+        - gcc
+        - intel
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - uses: worc4021/oneApi@v8
+      with:
+        icx: ${{ matrix.toolchain == 'intel' }}
+        ifx: ${{ matrix.toolchain == 'intel' }}
+        mkl: true
+    - name: Download GKlib
+      uses: dawidd6/action-download-artifact@v7
+      with: 
+        name: gklib-linux-${{ matrix.toolchain }}
+        repo: worc4021/GKlib
+        path: ${{ runner.TEMP }}
+        workflow: ci.yml
+    - name: Download METIS
+      uses: dawidd6/action-download-artifact@v7
+      with: 
+        name: metis-linux-${{ matrix.toolchain }}
+        repo: worc4021/METIS
+        path: ${{ runner.TEMP }}
+        workflow: ci.yml
+    - name: Download MUMPS
+      uses: dawidd6/action-download-artifact@v7
+      with: 
+        name: mumps-linux-${{ matrix.toolchain }}
+        repo: worc4021/MUMPS_cmake
+        path: ${{ runner.TEMP }}
+        workflow: ci.yml
+    - name: Download ma27
+      uses: dawidd6/action-download-artifact@v7
+      with: 
+        name: coinhsl-linux-${{ matrix.toolchain }}
+        repo: worc4021/coinhsl
+        path: ${{ runner.TEMP }}
+        workflow: ci.yml
+        github_token: ${{secrets.GITHUB_TOKEN}}
+    - name: Download BQPD
+      uses: dawidd6/action-download-artifact@v7
+      with: 
+          name: bqpd-linux-${{ matrix.toolchain }}
+          repo: worc4021/upgraded-octo-adventure
+          path: ${{ runner.TEMP }}
+          workflow: ci.yml
+          github_token: ${{secrets.GITHUB_TOKEN}}
+    - name: Setup Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: '3.29.x'
+    - name: Configure
+      run: |
+        cmake --preset linux-${{ matrix.toolchain }}-release-config -DBUILD_MEX:BOOL=OFF
+      working-directory: ${{ github.workspace }}
+      env:
+        CMAKE_INSTALL_PREFIX: ${{ runner.TEMP }}
+    - name: Build
+      run: |
+        cmake --build --preset linux-${{ matrix.toolchain }}-release-build --target install
+      working-directory: ${{ github.workspace }}
+    - name: Upload library
+      uses: actions/upload-artifact@v4
+      with:
+        name: mumps-linux-${{ matrix.toolchain}}
+        path: ${{ github.workspace }}/out/install/linux-${{ matrix.toolchain }}-release-config
