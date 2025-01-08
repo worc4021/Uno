@@ -1,10 +1,7 @@
 ﻿# Copyright (c) 2018-2024 Charlie Vanaret
 # Licensed under the MIT license. See LICENSE file in the project directory for details.
 
-cmake_minimum_required(VERSION 3.7)
-if(${CMAKE_VERSION} VERSION_LESS 3.12)
-	cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
-endif()
+cmake_minimum_required(VERSION 3.15)
 
 ######################
 # project definition #
@@ -132,9 +129,8 @@ add_library(uno STATIC ${UNO_SOURCE_FILES})
 set_target_properties(uno PROPERTIES 
       POSITION_INDEPENDENT_CODE ON
       MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-target_include_directories(uno PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/uno> $<INSTALL_INTERFACE:include/uno>)
 target_include_directories(uno PRIVATE ${CMAKE_BINARY_DIR}/include)
-target_compile_definitions(uno PUBLIC ${UNO_DEFINES})
+target_compile_definitions(uno PRIVATE ${UNO_DEFINES})
 target_link_libraries(uno PUBLIC ${LIBRARIES})
 
 
@@ -143,8 +139,8 @@ target_compile_options(uno PRIVATE -Wall -Wextra $<$<COMPILE_LANGUAGE:C,CXX>:-Wn
 target_sources(uno PUBLIC
       FILE_SET public_headers
       TYPE HEADERS
-      BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-      FILES ${UNO_HEADER_FILES}
+      BASE_DIRS uno 
+      FILES ${UNO_HEADER_REL}
 )  
 
 ######################
@@ -169,17 +165,33 @@ message(STATUS "GoogleTest: WITH_GTEST=${WITH_GTEST}")
 if(WITH_GTEST)
    enable_testing()
    include(FetchContent)
+   # For Windows: Prevent overriding the parent project's compiler/linker settings
+   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
    FetchContent_Declare(
       googletest
       URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
       EXCLUDE_FROM_ALL
    )
-   # For Windows: Prevent overriding the parent project's compiler/linker settings
-   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
    FetchContent_MakeAvailable(googletest)
 
    add_executable(run_unotest ${TESTS_UNO_SOURCE_FILES})
    target_link_libraries(run_unotest PUBLIC GTest::gtest uno)
+   set_target_properties(run_unotest PROPERTIES 
+                                 POSITION_INDEPENDENT_CODE ON
+                                 MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+   # Not sure why this is required to link runtimes statically. According to documentation gtest_force_shared_crt is for that purpose.
+   set_target_properties(gtest PROPERTIES 
+                        POSITION_INDEPENDENT_CODE ON
+                        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+   set_target_properties(gtest_main PROPERTIES 
+                        POSITION_INDEPENDENT_CODE ON
+                        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+   set_target_properties(gmock PROPERTIES 
+                        POSITION_INDEPENDENT_CODE ON
+                        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+   set_target_properties(gmock_main PROPERTIES 
+                        POSITION_INDEPENDENT_CODE ON
+                        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
    include(GoogleTest)
    include(CTest)
    gtest_discover_tests(run_unotest)
