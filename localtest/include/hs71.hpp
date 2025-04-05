@@ -313,7 +313,33 @@ namespace local
         size_t number_objective_gradient_nonzeros() const override { return number_variables; }
         size_t number_jacobian_nonzeros() const override { return 2 * number_variables; }
         size_t number_hessian_nonzeros() const override { return number_variables * number_variables; }
-        
+        void compute_hessian_vector_product(const uno::Vector<double> &x,
+                                            double objective_multiplier,
+                                            const uno::Vector<double> &multipliers,
+                                            uno::Vector<double> &result) const override
+        {
+            double H[4][4] = {{2 * x[3], x[3], x[3], 2 * x[0] + x[1] + x[2]},
+                              {x[3], 0, 0, x[0]},
+                              {x[3], 0, 0, x[0]},
+                              {2 * x[0] + x[1] + x[2], x[0], x[0], 0}};
+
+            double cH[4][4] = {{0, x[2] * x[3], x[1] * x[3], x[1] * x[2]},
+                               {x[2] * x[3], 0, x[0] * x[3], x[0] * x[2]},
+                               {x[1] * x[3], x[0] * x[3], 0, x[0] * x[1]},
+                               {x[1] * x[2], x[0] * x[2], x[0] * x[1], 0}};
+            const double cH2[4][4] = {{2, 0, 0, 0},
+                                      {0, 2, 0, 0},
+                                      {0, 0, 2, 0},
+                                      {0, 0, 0, 2}};
+            for (std::size_t iRow = 0; iRow < 4; ++iRow){
+                result[iRow] = 0.;
+                for (std::size_t jCol = 0; jCol < 4; ++jCol) {
+                    result[iRow] += (objective_multiplier * H[iRow][jCol] + 
+                                     multipliers[0] * cH[iRow][jCol] + 
+                                     multipliers[1] * cH2[iRow][jCol]) * x[jCol];
+                }
+            }
+        }
     };
 
 
