@@ -27,13 +27,10 @@ include($ENV{CMAKE_INSTALL_PREFIX}/cmake/mumpsTargets.cmake)
 include($ENV{CMAKE_INSTALL_PREFIX}/cmake/coinhslTargets.cmake)
 
 include(CMakeGraphVizOptions)
-include(FortranCInterface)
-FortranCInterface_VERIFY(CXX)
 
-
-FortranCInterface_HEADER(${CMAKE_BINARY_DIR}/include/fortran_interface.h
-                            MACRO_NAMESPACE "FC_"
-                            SYMBOL_NAMESPACE "FC_")
+# Deal with some windows peculiarities across the project
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # directories
 set(DIRECTORIES uno ${CMAKE_BINARY_DIR}/include)
@@ -151,11 +148,6 @@ add_executable(uno_ampl bindings/AMPL/AMPLModel.cpp bindings/AMPL/AMPLUserCallba
 
 target_link_libraries(uno_ampl PUBLIC uno ampl::ampl)
 target_compile_definitions(uno_ampl PRIVATE HAS_AMPLSOLVER)
-# target_compile_options(uno_ampl PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fsanitize=address,undefined>)
-# target_link_options(uno_ampl PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fsanitize=address,undefined>)
-set_target_properties(uno_ampl PROPERTIES 
-   POSITION_INDEPENDENT_CODE ON
-   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 ##################################
 # optional GoogleTest unit tests #
@@ -176,22 +168,6 @@ if(WITH_GTEST)
 
    add_executable(run_unotest ${TESTS_UNO_SOURCE_FILES})
    target_link_libraries(run_unotest PUBLIC GTest::gtest uno)
-   set_target_properties(run_unotest PROPERTIES 
-                                 POSITION_INDEPENDENT_CODE ON
-                                 MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-   # Not sure why this is required to link runtimes statically. According to documentation gtest_force_shared_crt is for that purpose.
-   set_target_properties(gtest PROPERTIES 
-                        POSITION_INDEPENDENT_CODE ON
-                        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-   set_target_properties(gtest_main PROPERTIES 
-                        POSITION_INDEPENDENT_CODE ON
-                        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-   set_target_properties(gmock PROPERTIES 
-                        POSITION_INDEPENDENT_CODE ON
-                        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-   set_target_properties(gmock_main PROPERTIES 
-                        POSITION_INDEPENDENT_CODE ON
-                        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
    include(GoogleTest)
    include(CTest)
    gtest_discover_tests(run_unotest)
